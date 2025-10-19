@@ -1,0 +1,8 @@
+# CODEOWNERS — assign reviewers for files and paths
+# Format: <pattern> <owner1> <owner2>
+
+# Backend
+/src/database @katarinabencun
+
+# Frontend
+
