@@ -8,10 +8,14 @@ export const getVehiclesFromDB = async () => {
 export const insertVehicleToDB = async (vehicleData) => {
   const { id_vozilo, id_osoba, marka, model, registracija, godina_proizvodnje } = vehicleData;
 
-  const [result] = await pool.query(
-//    "INSERT INTO vozilo (id_vozilo, id_osoba, marka, model, registracija, godina_proizvodnje) VALUES (?, ?, ?, ?, ?, ?)",
-    [id_vozilo, id_osoba, marka, model, registracija, godina_proizvodnje]
-  );
+  const query = `
+    INSERT INTO vozilo (id_vozilo, id_osoba, marka, model, registracija, godina_proizvodnje)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *;
+  `;
 
-  return { id: result.insertId, ...vehicleData };
+  const values = [id_vozilo, id_osoba, marka, model, registracija, godina_proizvodnje];
+
+  const { rows } = await pool.query(query, values);
+  return rows[0];
 };
