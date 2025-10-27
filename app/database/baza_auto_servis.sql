@@ -2,17 +2,30 @@ CREATE TABLE osoba (
     id_osoba SERIAL PRIMARY KEY,
     ime VARCHAR(100) NOT NULL,
     prezime VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    telefon VARCHAR(20),
+    email VARCHAR(100) UNIQUE NOT NULL CHECK (
+	  email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+	),
+    telefon VARCHAR(20) CHECK (telefon ~ '^\+?[0-9\s]+$'),
     uloga VARCHAR(50) CHECK (uloga IN ('korisnik', 'serviser', 'administrator')),
     oauth_id VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE marka (
+    id_marka SERIAL PRIMARY KEY,
+    naziv VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE model (
+    id_model SERIAL PRIMARY KEY,
+    id_marka INT REFERENCES marka(id_marka) ON DELETE CASCADE,
+    naziv VARCHAR(50) NOT NULL,
+    UNIQUE (id_marka, naziv)
 );
 
 CREATE TABLE vozilo (
     id_vozilo SERIAL PRIMARY KEY,
     id_osoba INT REFERENCES osoba(id_osoba) ON DELETE CASCADE,--vlasnik
-    marka VARCHAR(50) NOT NULL,
-    model VARCHAR(50) NOT NULL,
+    id_model INT REFERENCES model(id_model) ON DELETE RESTRICT,
     registracija VARCHAR(20) UNIQUE NOT NULL,
     godina_proizvodnje INT CHECK (godina_proizvodnje <= EXTRACT(YEAR FROM CURRENT_DATE))
 );
@@ -51,8 +64,7 @@ CREATE TABLE prijava_servisa (
 
 CREATE TABLE zamjena_vozilo (
     id_zamjena SERIAL PRIMARY KEY,
-    marka VARCHAR(50) NOT NULL,
-    model VARCHAR(50) NOT NULL,
+    id_model INT REFERENCES model(id_model) ON DELETE RESTRICT,
     registracija VARCHAR(20) UNIQUE NOT NULL,
     dostupno BOOLEAN DEFAULT TRUE
 );
