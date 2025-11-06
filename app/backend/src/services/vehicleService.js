@@ -1,21 +1,26 @@
 import { pool } from "../config/db.js";
 
-export const getVehiclesFromDB = async () => {
-  const [rows] = await pool.query("SELECT * FROM vozilo");
-  return rows;
+//dohvaca sva vozila
+export const getVozilaByOsoba = async (id_osoba) => {
+  const result = await pool.query(
+    `SELECT v.*, m.naziv AS model_naziv, ma.naziv AS marka_naziv
+     FROM vozilo v
+     JOIN model m ON v.id_model = m.id_model
+     JOIN marka ma ON m.id_marka = ma.id_marka
+     WHERE v.id_osoba = $1
+     ORDER BY v.id_vozilo DESC`,
+    [id_osoba]
+  );
+  return result.rows;
 };
 
-export const insertVehicleToDB = async (vehicleData) => {
-  const { id_vozilo, id_osoba, marka, model, registracija, godina_proizvodnje } = vehicleData;
-
-  const query = `
-    INSERT INTO vozilo (id_vozilo, id_osoba, marka, model, registracija, godina_proizvodnje)
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING *;
-  `;
-
-  const values = [id_vozilo, id_osoba, marka, model, registracija, godina_proizvodnje];
-
-  const { rows } = await pool.query(query, values);
-  return rows[0];
+//dodaje vozilo
+export const addVozilo = async ({ id_osoba, id_model, registracija, godina_proizvodnje }) => {
+  const result = await pool.query(
+    `INSERT INTO vozilo (id_osoba, id_model, registracija, godina_proizvodnje)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [id_osoba, id_model, registracija, godina_proizvodnje]
+  );
+  return result.rows[0];
 };
