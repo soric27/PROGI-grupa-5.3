@@ -18,11 +18,18 @@ passport.use(new GoogleStrategy({
       if (rows.length === 0) {
         // ako ne postoji, dodaj novog korisnika
         const insertQuery = `
-          INSERT INTO osoba (ime, email, oauth_id)
-          VALUES ($1, $2, $3)
+          INSERT INTO osoba (ime, prezime, email, uloga, oauth_id)
+          VALUES ($1, $2, $3, $4, $5)
           RETURNING *;
         `;
-        const { rows: newUser } = await pool.query(insertQuery, [profile.displayName, profile.emails[0].value, profile.id]);
+        const values = [
+          profile.name?.givenName || profile.displayName || "Korisnik",
+          profile.name?.familyName || "",
+          profile.emails[0].value,
+          "korisnik",
+          profile.id
+        ];
+        const { rows: newUser } = await pool.query(insertQuery, values);
         user = newUser[0];
       } else {
         user = rows[0];

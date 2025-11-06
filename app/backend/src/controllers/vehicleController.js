@@ -1,8 +1,9 @@
-import { getVehiclesFromDB, insertVehicleToDB } from "../services/vehicleService.js";
+import { getVozilaByOsoba, addVozilo } from "../services/vehicleService.js";
 
-export const getAllVehicles = async (req, res) => {
+export const getVozilaOdOsobe = async (req, res) => {
   try {
-    const vehicles = await getVehiclesFromDB();
+    const { id_osoba } = req.user; // dobiveno iz middleware-a nakon logina
+    const vehicles = await getVozilaByOsoba(id_osoba);
     res.json(vehicles);
   } catch (error) {
     console.error("Greška pri dohvaćanju vozila:", error);
@@ -10,10 +11,16 @@ export const getAllVehicles = async (req, res) => {
   }
 };
 
-export const addVehicle = async (req, res) => {
+export const createVozilo = async (req, res) => {
   try {
-    const vehicle = req.body;
-    const newVehicle = await insertVehicleToDB(vehicle);
+    const { id_model, registracija, godina_proizvodnje } = req.body;
+    const { id_osoba } = req.user;
+    const newVehicle = await addVozilo({
+      id_osoba,
+      id_model,
+      registracija,
+      godina_proizvodnje,
+    });
     res.status(201).json(newVehicle);
   } catch (error) {
     console.error("Greška pri dodavanju vozila:", error);
