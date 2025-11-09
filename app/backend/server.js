@@ -5,8 +5,8 @@ import dotenv from "dotenv";
 import vehicleRoutes from "./src/routes/vehicleRoutes.js";
 import passport from "./src/config/passport.js";
 import authRoutes from "./src/routes/authRoutes.js";
-import markaRoutes from "./routes/markaRoutes.js";
-import modelRoutes from "./routes/modelRoutes.js";
+import markaRoutes from "./src/routes/markaRoutes.js";
+import modelRoutes from "./src/routes/modelRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -32,7 +32,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/auth", authRoutes);
-app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/vozila", vehicleRoutes);
 app.use("/api/marke", markaRoutes);
 app.use("/api/modeli", modelRoutes);
 

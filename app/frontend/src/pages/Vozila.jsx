@@ -1,41 +1,101 @@
-import { useState } from 'react';
+import { useEffect, useState } from "react";
+import axios from "axios";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-function Vozila() {
+function Vozila({ user }) {
   const [vozila, setVozila] = useState([]);
+  const [marke, setMarke] = useState([]);
+  const [modeli, setModeli] = useState([]);
   const [novoVozilo, setNovoVozilo] = useState({
-    model: '',
-    registracija: '',
-    serviser: '',
-    datum: '',
-    zamjensko: false,
+    id_marka: "",
+    id_model: "",
+    registracija: "",
+    godina_proizvodnje: "",
   });
   const [showForm, setShowForm] = useState(false);
 
+  // vozila prijavljenog korisnika
+  useEffect(() => {
+    if (user) {
+      axios
+        .get("http://localhost:5000/api/vozila", { withCredentials: true })
+        .then((res) => setVozila(res.data))
+        .catch((err) => console.error("Greška pri dohvaćanju vozila:", err));
+    }
+  }, [user]);
+
+  // marke automobila
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/marke")
+      .then((res) => setMarke(res.data))
+      .catch((err) => console.error("Greška pri dohvaćanju marki:", err));
+  }, []);
+
+  // modeli odredjene marke
+  useEffect(() => {
+    if (novoVozilo.id_marka) {
+      axios
+        .get(`http://localhost:5000/api/modeli/${novoVozilo.id_marka}`)
+        .then((res) => setModeli(res.data))
+        .catch((err) => console.error("Greška pri dohvaćanju modela:", err));
+    } else {
+      setModeli([]);
+    }
+  }, [novoVozilo.id_marka]);
+
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setNovoVozilo({
-      ...novoVozilo,
-      [name]: type === 'checkbox' ? checked : value,
-    });
+    const { name, value } = e.target;
+    setNovoVozilo({ ...novoVozilo, [name]: value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setVozila([...vozila, novoVozilo]);
-    setNovoVozilo({ model: '', registracija: '', serviser: '', datum: '', zamjensko: false });
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    await axios.post(
+      "http://localhost:5000/api/vozila",
+      {
+        id_model: Number(novoVozilo.id_model),
+        registracija: novoVozilo.registracija,
+        godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
+      },
+      { withCredentials: true }
+    );
+
+    const response = await axios.get("http://localhost:5000/api/vozila", {
+      withCredentials: true,
+    });
+    setVozila(response.data);
+
+    setNovoVozilo({
+      id_marka: "",
+      id_model: "",
+      registracija: "",
+      godina_proizvodnje: "",
+    });
     setShowForm(false);
-  };
+  } catch (err) {
+    console.error("Greška pri dodavanju vozila:", err);
+  }
+};
+
+  if (!user) {
+    return (
+      <div className="container mt-5 text-center">
+        <h4>Molimo prijavite se kako biste vidjeli i prijavili svoja vozila.</h4>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-4">
-      <h2 className="mb-3">Pregled prijavljenih vozila</h2>
+      <h2 className="mb-3">Moja vozila</h2>
 
       <button
         className="btn btn-primary mb-3"
         onClick={() => setShowForm(!showForm)}
       >
-        {showForm ? 'Zatvori unos' : 'Dodaj vozilo'}
+        {showForm ? "Zatvori unos" : "Dodaj vozilo"}
       </button>
 
       {showForm && (
@@ -43,72 +103,66 @@ function Vozila() {
           <h5 className="mb-3">Novi unos vozila</h5>
           <form onSubmit={handleSubmit}>
             <div className="row mb-3">
-              <div className="col-md-6">
-                <label className="form-label">Model vozila</label>
-                <input
-                  type="text"
-                  name="model"
-                  className="form-control"
-                  value={novoVozilo.model}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Registracija</label>
-                <input
-                  type="text"
-                  name="registracija"
-                  className="form-control"
-                  value={novoVozilo.registracija}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <label className="form-label">Serviser</label>
+              <div className="col-md-4">
+                <label className="form-label">Marka</label>
                 <select
-                  name="serviser"
+                  name="id_marka"
                   className="form-select"
-                  value={novoVozilo.serviser}
+                  value={novoVozilo.id_marka}
                   onChange={handleChange}
                   required
                 >
-                  <option value="">Odaberi servisera...</option>
-                  <option value="Domagoj">Domagoj</option>
-                  <option value="Ivan">Ivan</option>
-                  <option value="Katarina">Katarina</option>
+                  <option value="">Odaberi marku...</option>
+                  {marke.map((m) => (
+                    <option key={m.id_marka} value={m.id_marka}>
+                      {m.naziv}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label">Datum termina</label>
+              <div className="col-md-4">
+                <label className="form-label">Model</label>
+                <select
+                  name="id_model"
+                  className="form-select"
+                  value={novoVozilo.id_model}
+                  onChange={handleChange}
+                  required
+                  disabled={!novoVozilo.id_marka}
+                >
+                  <option value="">Odaberi model...</option>
+                  {modeli.map((mod) => (
+                    <option key={mod.id_model} value={mod.id_model}>
+                      {mod.naziv}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label">Godina proizvodnje</label>
                 <input
-                  type="date"
-                  name="datum"
+                  type="number"
+                  name="godina_proizvodnje"
                   className="form-control"
-                  value={novoVozilo.datum}
+                  value={novoVozilo.godina_proizvodnje}
                   onChange={handleChange}
                   required
                 />
               </div>
             </div>
 
-            <div className="form-check mb-3">
+            <div className="mb-3">
+              <label className="form-label">Registracija</label>
               <input
-                type="checkbox"
-                name="zamjensko"
-                className="form-check-input"
-                checked={novoVozilo.zamjensko}
+                type="text"
+                name="registracija"
+                className="form-control"
+                value={novoVozilo.registracija}
                 onChange={handleChange}
+                required
               />
-              <label className="form-check-label">
-                Potrebno zamjensko vozilo
-              </label>
             </div>
 
             <button type="submit" className="btn btn-success">
@@ -118,29 +172,29 @@ function Vozila() {
         </div>
       )}
 
-      {vozila.length > 0 && (
+      {vozila.length > 0 ? (
         <table className="table table-striped mt-3">
           <thead>
             <tr>
+              <th>Marka</th>
               <th>Model</th>
               <th>Registracija</th>
-              <th>Serviser</th>
-              <th>Datum</th>
-              <th>Zamjensko vozilo</th>
+              <th>Godina</th>
             </tr>
           </thead>
           <tbody>
-            {vozila.map((v, i) => (
-              <tr key={i}>
-                <td>{v.model}</td>
+            {vozila.map((v) => (
+              <tr key={v.id_vozilo}>
+                <td>{v.marka_naziv}</td>
+                <td>{v.model_naziv}</td>
                 <td>{v.registracija}</td>
-                <td>{v.serviser}</td>
-                <td>{v.datum}</td>
-                <td>{v.zamjensko ? 'Da' : 'Ne'}</td>
+                <td>{v.godina_proizvodnje}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      ) : (
+        <p>Još niste prijavili nijedno vozilo.</p>
       )}
     </div>
   );
