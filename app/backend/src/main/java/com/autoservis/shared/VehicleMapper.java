@@ -1,7 +1,7 @@
-package main.java.com.autoservis.shared;
+package com.autoservis.shared;
 
-import com.autoservis.domain.vozilo.Vozilo;
-import com.autoservis.interfaces.dto.vozilo.VehicleDto;
+import com.autoservis.models.Vozilo;
+import com.autoservis.interfaces.http.vozilo.VehicleDto;
 
 public class VehicleMapper {
   public static VehicleDto toDto(Vozilo v){

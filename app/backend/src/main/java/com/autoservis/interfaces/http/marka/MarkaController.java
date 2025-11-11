@@ -1,7 +1,7 @@
-package main.java.com.autoservis.interfaces.http.marka;
+package com.autoservis.interfaces.http.marka;
 
-import com.autoservis.application.marka.MarkaService;
-import com.autoservis.domain.marka.Marka;
+import com.autoservis.services.MarkaService;
+import com.autoservis.models.Marka;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

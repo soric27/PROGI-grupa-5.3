@@ -1,4 +1,4 @@
-package main.java.com.autoservis.config;
+package com.autoservis.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

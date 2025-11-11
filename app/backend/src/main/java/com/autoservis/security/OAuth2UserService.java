@@ -1,7 +1,7 @@
 package com.autoservis.security;
 
-import com.autoservis.domain.osoba.Osoba;
-import com.autoservis.infrastructure.persistence.osoba.OsobaRepository;
+import com.autoservis.models.Osoba;
+import com.autoservis.repositories.OsobaRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.*;
 import org.springframework.security.oauth2.core.*;

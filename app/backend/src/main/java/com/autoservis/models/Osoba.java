@@ -1,4 +1,4 @@
-package main.java.com.autoservis.models;
+package com.autoservis.models;
 
 import jakarta.persistence.*;
 

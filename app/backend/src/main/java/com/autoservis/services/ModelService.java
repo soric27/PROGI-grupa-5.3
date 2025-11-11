@@ -1,7 +1,7 @@
-package main.java.com.autoservis.services;
+package com.autoservis.services;
 
-import com.autoservis.domain.model.Model;
-import com.autoservis.infrastructure.persistence.model.ModelRepository;
+import com.autoservis.models.Model;
+import com.autoservis.repositories.ModelRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

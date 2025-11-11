@@ -1,8 +1,8 @@
-package main.java.com.autoservis.interfaces.http.vozilo;
+package com.autoservis.interfaces.http.vozilo;
 
-import com.autoservis.application.vozilo.VoziloService;
-import com.autoservis.interfaces.dto.vozilo.VehicleCreateDto;
-import com.autoservis.interfaces.dto.vozilo.VehicleDto;
+import com.autoservis.services.VoziloService;
+import com.autoservis.interfaces.http.vozilo.VehicleCreateDto;
+import com.autoservis.interfaces.http.vozilo.VehicleDto;
 import com.autoservis.security.SpringOsobaPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;

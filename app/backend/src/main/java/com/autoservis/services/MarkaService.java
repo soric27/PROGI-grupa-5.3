@@ -1,7 +1,7 @@
-package main.java.com.autoservis.services;
+package com.autoservis.services;
 
-import com.autoservis.domain.marka.Marka;
-import com.autoservis.infrastructure.persistence.marka.MarkaRepository;
+import com.autoservis.models.Marka;
+import com.autoservis.repositories.MarkaRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

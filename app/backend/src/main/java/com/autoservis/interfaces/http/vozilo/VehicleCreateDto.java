@@ -1,4 +1,4 @@
-package main.java.com.autoservis.interfaces.http.vozilo;
+package com.autoservis.interfaces.http.vozilo;
 
 import jakarta.validation.constraints.*;
 

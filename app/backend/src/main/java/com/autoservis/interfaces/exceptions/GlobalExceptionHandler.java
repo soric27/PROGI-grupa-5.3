@@ -1,4 +1,4 @@
-package main.java.com.autoservis.interfaces.exceptions;
+package com.autoservis.interfaces.exceptions;
 
 import com.autoservis.interfaces.http.vozilo.VoziloController.Unauthorized;
 import org.springframework.http.*;

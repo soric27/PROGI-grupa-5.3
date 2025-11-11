@@ -1,7 +1,7 @@
-package main.java.com.autoservis.interfaces.http.model;
+package com.autoservis.interfaces.http.model;
 
-import com.autoservis.application.model.ModelService;
-import com.autoservis.domain.model.Model;
+import com.autoservis.services.ModelService;
+import com.autoservis.models.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

@@ -1,7 +1,7 @@
-package main.java.com.autoservis.services;
+package com.autoservis.services;
 
-import com.autoservis.interfaces.dto.vozilo.VehicleCreateDto;
-import com.autoservis.interfaces.dto.vozilo.VehicleDto;
+import com.autoservis.interfaces.http.vozilo.VehicleCreateDto;
+import com.autoservis.interfaces.http.vozilo.VehicleDto;
 
 import java.util.List;
 

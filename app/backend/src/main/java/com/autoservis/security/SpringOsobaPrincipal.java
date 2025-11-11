@@ -1,6 +1,6 @@
-package main.java.com.autoservis.security;
+package com.autoservis.security;
 
-import com.autoservis.domain.osoba.Osoba;
+import com.autoservis.models.Osoba;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 

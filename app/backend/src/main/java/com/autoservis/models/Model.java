@@ -1,6 +1,6 @@
-package main.java.com.autoservis.models;
+package com.autoservis.models;
 
-import com.autoservis.domain.marka.Marka;
+import com.autoservis.models.Marka;
 import jakarta.persistence.*;
 
 @Entity @Table(name="model")

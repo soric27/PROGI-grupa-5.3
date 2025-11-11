@@ -1,14 +1,14 @@
-package com.autoservis.application.vozilo;
+package com.autoservis.services;
 
-import com.autoservis.domain.model.Model;
-import com.autoservis.domain.osoba.Osoba;
-import com.autoservis.domain.vozilo.Vozilo;
-import com.autoservis.infrastructure.persistence.model.ModelRepository;
-import com.autoservis.infrastructure.persistence.osoba.OsobaRepository;
-import com.autoservis.infrastructure.persistence.vozilo.VoziloRepository;
-import com.autoservis.interfaces.dto.vozilo.VehicleCreateDto;
-import com.autoservis.interfaces.dto.vozilo.VehicleDto;
-import com.autoservis.shared.mapper.VehicleMapper;
+import com.autoservis.models.Model;
+import com.autoservis.models.Osoba;
+import com.autoservis.models.Vozilo;
+import com.autoservis.repositories.ModelRepository;
+import com.autoservis.repositories.OsobaRepository;
+import com.autoservis.repositories.VoziloRepository;
+import com.autoservis.interfaces.http.vozilo.VehicleCreateDto;
+import com.autoservis.interfaces.http.vozilo.VehicleDto;
+import com.autoservis.shared.VehicleMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

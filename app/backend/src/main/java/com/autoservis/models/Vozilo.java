@@ -1,7 +1,7 @@
-package com.autoservis.domain.vozilo;
+package com.autoservis.models;
 
-import com.autoservis.domain.model.Model;
-import com.autoservis.domain.osoba.Osoba;
+import com.autoservis.models.Model;
+import com.autoservis.models.Osoba;
 import jakarta.persistence.*;
 
 @Entity @Table(name="vozilo")

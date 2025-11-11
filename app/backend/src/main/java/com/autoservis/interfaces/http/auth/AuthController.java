@@ -1,4 +1,4 @@
-package main.java.com.autoservis.interfaces.http.auth;
+package com.autoservis.interfaces.http.auth;
 
 import com.autoservis.security.SpringOsobaPrincipal;
 import org.springframework.http.ResponseEntity;

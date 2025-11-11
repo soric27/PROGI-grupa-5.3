@@ -1,4 +1,4 @@
-package main.java.com.autoservis.security;
+package com.autoservis.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

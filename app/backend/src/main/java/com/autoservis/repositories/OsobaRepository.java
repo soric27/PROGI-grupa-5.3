@@ -1,5 +1,5 @@
-package main.java.com.autoservis.repositories;
-import main.java.com.autoservis.models.Osoba;
+package com.autoservis.repositories;
+import com.autoservis.models.Osoba;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
