@@ -3,11 +3,26 @@ import { Link } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import logo from '../assets/auto-servis-logo.png';
 
+const API = process.env.REACT_APP_API_URL;
+
 function Navbar({ user }) {
   const [showLogin, setShowLogin] = useState(false);
 
-  const handleToggleLogin = () => {
-    setShowLogin(!showLogin);
+  const handleToggleLogin = () => setShowLogin(!showLogin);
+
+  // pri odjavi se salje POST prema backendu pa preusmjeravanje na pocetnu
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch(`${API}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (_) {
+
+    } finally {
+      window.location.href = '/';
+    }
   };
 
   return (
@@ -33,9 +48,9 @@ function Navbar({ user }) {
                 {user ? (
                   <>
                     <span className="text-light me-2">Pozdrav, {user.ime}</span>
-                    <a href="http://localhost:5000/auth/logout" className="btn btn-outline-light">
+                    <button onClick={handleLogout} className="btn btn-outline-light">
                       Odjava
-                    </a>
+                    </button>
                   </>
                 ) : (
                   <button onClick={handleToggleLogin} className="btn btn-outline-light">
@@ -43,28 +58,27 @@ function Navbar({ user }) {
                   </button>
                 )}
               </li>
-
             </ul>
           </div>
         </div>
       </nav>
 
       {showLogin && (
-  <div className="login-overlay bg-secondary bg-opacity-25 py-5">
-    <div className="login-box bg-light p-4 text-dark rounded shadow">
-      <h5 className="text-center mb-3">Prijava korisnika</h5>
-      <div className="text-center">
-        <a
-          href="http://localhost:5000/auth/google"
-          className="btn btn-danger btn-lg"
-        >
-          <i className="bi bi-google me-2"></i> Prijava s Google računom
-        </a>
-      </div>
-    </div>
-  </div>
-)}
-
+        <div className="login-overlay bg-secondary bg-opacity-25 py-5">
+          <div className="login-box bg-light p-4 text-dark rounded shadow">
+            <h5 className="text-center mb-3">Prijava korisnika</h5>
+            <div className="text-center">
+              {/* ✅ Ispravna Spring ruta za OAuth2 start */}
+              <a
+                href={`${API}/oauth2/authorization/google`}
+                className="btn btn-danger btn-lg"
+              >
+                <i className="bi bi-google me-2"></i> Prijava s Google računom
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

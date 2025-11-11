@@ -8,10 +8,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController @RequestMapping("/api/auth")
 public class AuthController {
 
-  // SPA entry – SecurityConfig preuzima stvarni redirect
-  @GetMapping("/login/google")
-  public ResponseEntity<?> login() { return ResponseEntity.ok().build(); }
-
   @GetMapping("/user")
   public ResponseEntity<?> currentUser(Authentication auth){
     if (auth == null || !(auth.getPrincipal() instanceof SpringOsobaPrincipal p))

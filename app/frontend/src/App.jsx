@@ -6,12 +6,14 @@ import Home from './pages/Home';
 import Vozila from './pages/Vozila';
 import Kontakt from './pages/Kontakt';
 
+const API = process.env.REACT_APP_API_URL;
+
 function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/auth/user", { withCredentials: true })
+      .get(`${API}/api/auth/user`, { withCredentials: true })
       .then((res) => setUser(res.data))
       .catch(() => setUser(null));
   }, []);
