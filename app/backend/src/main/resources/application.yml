@@ -1,5 +1,10 @@
 server:
   port: ${PORT:8080}
+  servlet:
+    session:
+      cookie:
+        same-site: none
+        secure: true
 
 spring:
   datasource:
@@ -10,9 +15,6 @@ spring:
     hibernate:
       ddl-auto: none
     open-in-view: false
-    properties:
-      hibernate.format_sql: true
-      hibernate.jdbc.time_zone: UTC
 
 spring:
   security:
@@ -29,4 +31,4 @@ spring:
             issuer-uri: https://accounts.google.com
 
 app:
-  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  frontend-url: ${FRONTEND_URL}
