@@ -36,9 +36,9 @@ public class SecurityConfig {
             .anyRequest().authenticated()
             )
             .oauth2Login(o -> o
-            .userInfoEndpoint(ui -> ui.userService(oAuth2UserService))
-            .defaultSuccessUrl(frontendUrl + "?login=success", true)
-            .failureUrl(frontendUrl + "?login=fail")
+                .userInfoEndpoint(ui -> ui.userService(oAuth2UserService))
+                .successHandler((req, res, auth) -> res.sendRedirect(frontendUrl + "/?login=success"))
+                .failureUrl(frontendUrl + "/?login=fail")
             )
             .logout(lo -> lo
             .logoutUrl("/api/auth/logout")
