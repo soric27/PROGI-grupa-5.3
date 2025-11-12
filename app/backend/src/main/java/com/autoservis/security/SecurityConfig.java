@@ -20,32 +20,25 @@ public class SecurityConfig {
   public SecurityConfig(OAuth2UserService svc){ this.oAuth2UserService = svc; }
 
   @Bean
-    SecurityFilterChain filter(HttpSecurity http) throws Exception {
+    SecurityFilterChain filter(HttpSecurity http, OAuth2SuccessHandler successHandler) throws Exception {
         http
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-            .requestMatchers(
-                "/oauth2/**",
-                "/login/**",
-                "/api/auth/user",
-                "/api/auth/logout",
-                "/api/marke/**",
-                "/api/modeli/**"
-            ).permitAll()
-            .anyRequest().authenticated()
+                .requestMatchers(
+                    "/oauth2/**", "/login/**",
+                    "/api/auth/user", "/api/auth/logout",
+                    "/api/marke/**", "/api/modeli/**"
+                ).permitAll()
+                .anyRequest().authenticated()
             )
             .oauth2Login(o -> o
                 .userInfoEndpoint(ui -> ui.userService(oAuth2UserService))
-                .successHandler((req, res, auth) -> res.sendRedirect(frontendUrl + "/?login=success"))
-                .failureUrl(frontendUrl + "/?login=fail")
+                .successHandler(successHandler) // << ovdje
+                .failureUrl(frontendUrl + "?login=fail")
             )
-            .logout(lo -> lo
-            .logoutUrl("/api/auth/logout")
-            .logoutSuccessHandler((req,res,auth) -> res.sendRedirect(frontendUrl))
-            )
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.ALWAYS));
+            .oauth2ResourceServer(o -> o.jwt()) // << token auth
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // << bez server sesije
         return http.build();
     }
-
 }
