@@ -10,17 +10,17 @@ router.get("/google", passport.authenticate("google", { scope: ["profile", "emai
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "https://progi-grupa-5-3-fyxj.onrender.com/?login=fail",
+    failureRedirect: (`${process.env.FRONTEND_URL}/?login=fail`),
     session: true,
   }),
   (req, res) => {
-    res.redirect("https://progi-grupa-5-3-fyxj.onrender.com/?login=success");
+    res.redirect(`${process.env.FRONTEND_URL}/?login=success`);
   }
 );
 
 router.get("/logout", (req, res) => {
   req.logout(() => {
-    res.redirect("http://localhost:3000");
+    res.redirect(process.env.FRONTEND_URL);  // ✅
   });
 });
 

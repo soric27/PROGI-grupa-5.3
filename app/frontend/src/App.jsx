@@ -16,13 +16,25 @@ class App extends Component {
 
   componentDidMount() {
     this.fetchUser();
+    
+    // ✅ DODAJ OVO - Provjeri ako je login=success u URL-u
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('login') === 'success') {
+      // Ponovno fetchaj korisnika nakon logina
+      setTimeout(() => this.fetchUser(), 500);
+      
+      // Očisti URL parametar
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }
 
   async fetchUser() {
     try {
       const userData = await ApiService.getCurrentUser();
       this.setState({ user: userData });
+      console.log("User logged in:", userData); // za debug
     } catch (error) {
+      console.log("User not logged in");
       this.setState({ user: null });
     }
   }

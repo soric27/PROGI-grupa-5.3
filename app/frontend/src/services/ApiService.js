@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://progi-grupa-5-3-j24v.onrender.com";
 
 class ApiService {
   constructor() {
