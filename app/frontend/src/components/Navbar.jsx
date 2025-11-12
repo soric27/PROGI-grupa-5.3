@@ -65,7 +65,7 @@ function Navbar({ user }) {
             <h5 className="text-center mb-3">Prijava korisnika</h5>
             <div className="text-center">
               <a
-                href={`${API_URL}/api/auth/login/google`}
+                href={`${process.env.REACT_APP_API_URL}/oauth2/authorization/google`}
                 className="btn btn-danger btn-lg"
               >
                 <i className="bi bi-google me-2"></i> Prijava s Google računom
