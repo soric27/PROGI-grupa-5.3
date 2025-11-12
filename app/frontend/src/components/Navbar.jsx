@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import logo from '../assets/auto-servis-logo.png';
 
-const API = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL;
 
 function Navbar({ user }) {
   const [showLogin, setShowLogin] = useState(false);
@@ -14,7 +14,7 @@ function Navbar({ user }) {
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
-      await fetch(`${API}/api/auth/logout`, {
+      await fetch(`${API_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -48,14 +48,10 @@ function Navbar({ user }) {
                 {user ? (
                   <>
                     <span className="text-light me-2">Pozdrav, {user.ime}</span>
-                    <button onClick={handleLogout} className="btn btn-outline-light">
-                      Odjava
-                    </button>
+                    <a href={`${API_URL}/api/auth/logout`} className="btn btn-outline-light">Odjava</a>
                   </>
                 ) : (
-                  <button onClick={handleToggleLogin} className="btn btn-outline-light">
-                    Login
-                  </button>
+                  <button onClick={handleToggleLogin} className="btn btn-outline-light">Login</button>
                 )}
               </li>
             </ul>
@@ -68,9 +64,8 @@ function Navbar({ user }) {
           <div className="login-box bg-light p-4 text-dark rounded shadow">
             <h5 className="text-center mb-3">Prijava korisnika</h5>
             <div className="text-center">
-              {/* ✅ Ispravna Spring ruta za OAuth2 start */}
               <a
-                href={`${API}/oauth2/authorization/google`}
+                href={`${API_URL}/api/auth/login/google`}
                 className="btn btn-danger btn-lg"
               >
                 <i className="bi bi-google me-2"></i> Prijava s Google računom
