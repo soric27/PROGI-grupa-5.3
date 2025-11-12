@@ -13,7 +13,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL, // Koristi iz .env
     credentials: true,
   })
 );
@@ -25,6 +25,12 @@ app.use(
     secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production', // true na Renderu, false lokalno
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' za cross-domain
+      httpOnly: true, // zaštita od XSS napada
+      maxAge: 24 * 60 * 60 * 1000 // sesija traje 24h
+    }
   })
 );
 

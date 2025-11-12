@@ -10,11 +10,11 @@ router.get("/google", passport.authenticate("google", { scope: ["profile", "emai
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "http://localhost:3000?login=fail",
+    failureRedirect: "https://progi-grupa-5-3-fyxj.onrender.com/?login=fail",
     session: true,
   }),
   (req, res) => {
-    res.redirect("http://localhost:3000?login=success");
+    res.redirect("https://progi-grupa-5-3-fyxj.onrender.com/?login=success");
   }
 );
 
