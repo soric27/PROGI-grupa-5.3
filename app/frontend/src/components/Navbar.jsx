@@ -48,7 +48,7 @@ class Navbar extends Component {
                   {user ? (
                     <>
                       <span className="text-light me-2">Pozdrav, {user.ime}</span>
-                      <a href="http://localhost:5000/auth/logout" className="btn btn-outline-light">
+                      <a href="https://progi-grupa-5-3-j24v.onrender.com/auth/logout" className="btn btn-outline-light">
                         Odjava
                       </a>
                     </>
@@ -76,7 +76,7 @@ class Navbar extends Component {
                   ></button>
                 </div>
                 <div className="modal-body text-center">
-                  <a href="http://localhost:5000/auth/google" className="btn btn-primary btn-lg w-100">
+                  <a href="https://progi-grupa-5-3-j24v.onrender.com/auth/google" className="btn btn-primary btn-lg w-100">
                     Prijavi se s Googleom
                   </a>
                 </div>
