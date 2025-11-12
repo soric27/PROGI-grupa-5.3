@@ -10,7 +10,7 @@ function Navbar({ user }) {
 
   const handleToggleLogin = () => setShowLogin(!showLogin);
 
-  // pri odjavi se salje POST prema backendu pa preusmjeravanje na pocetnu
+  // Odjava: POST prema backendu + redirect na početnu
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
@@ -19,7 +19,7 @@ function Navbar({ user }) {
         credentials: 'include',
       });
     } catch (_) {
-
+      // ignore
     } finally {
       window.location.href = '/';
     }
@@ -48,10 +48,14 @@ function Navbar({ user }) {
                 {user ? (
                   <>
                     <span className="text-light me-2">Pozdrav, {user.ime}</span>
-                    <a href={`${API_URL}/api/auth/logout`} className="btn btn-outline-light">Odjava</a>
+                    <button onClick={handleLogout} className="btn btn-outline-light">
+                      Odjava
+                    </button>
                   </>
                 ) : (
-                  <button onClick={handleToggleLogin} className="btn btn-outline-light">Login</button>
+                  <button onClick={handleToggleLogin} className="btn btn-outline-light">
+                    Login
+                  </button>
                 )}
               </li>
             </ul>
@@ -65,7 +69,7 @@ function Navbar({ user }) {
             <h5 className="text-center mb-3">Prijava korisnika</h5>
             <div className="text-center">
               <a
-                href={`${process.env.REACT_APP_API_URL}/oauth2/authorization/google`}
+                href={`${API_URL}/oauth2/authorization/google`}
                 className="btn btn-danger btn-lg"
               >
                 <i className="bi bi-google me-2"></i> Prijava s Google računom

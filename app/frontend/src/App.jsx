@@ -18,7 +18,7 @@ function AppRoutes() {
   const [user, setUser] = useState(null);
   const location = useLocation();
 
-  // ucitaj trenutnog korisnika
+  // početno učitavanje korisnika (ako je već logiran)
   useEffect(() => {
     axios
       .get("/api/auth/user")
@@ -26,15 +26,34 @@ function AppRoutes() {
       .catch(() => setUser(null));
   }, []);
 
-  // nakon povratka s Google login-a ponovo dohvatiti korisnika
+  // nakon povratka s Google-a
   useEffect(() => {
     const q = new URLSearchParams(location.search);
-    if (q.get("login") === "success") {
-      axios
-        .get("/api/auth/user")
-        .then((res) => setUser(res.data))
-        .catch(() => setUser(null));
-    }
+    if (q.get("login") !== "success") return;
+
+    let cancelled = false;
+
+    const tryFetch = async () => {
+      const maxTries = 6;           // ~ do 6 pokušaja
+      const delayMs = [300, 600, 1000, 1500, 2000, 3000]; // progresivno
+      for (let i = 0; i < maxTries && !cancelled; i++) {
+        try {
+          const res = await axios.get("/api/auth/user");
+          if (!cancelled) {
+            setUser(res.data);
+          }
+          return; // uspjelo
+        } catch (e) {
+          // pričekaj i pokušaj opet
+          await new Promise((r) => setTimeout(r, delayMs[i]));
+        }
+      }
+    };
+
+    tryFetch();
+    return () => {
+      cancelled = true;
+    };
   }, [location.search]);
 
   return (
