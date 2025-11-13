@@ -1,54 +1,74 @@
 package com.autoservis.interfaces.http.vozilo;
 
 import com.autoservis.services.VoziloService;
-import com.autoservis.interfaces.http.vozilo.VehicleCreateDto;
-import com.autoservis.interfaces.http.vozilo.VehicleDto;
-import com.autoservis.security.SpringOsobaPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController @RequestMapping("/api/vehicles")
+@RestController
+@RequestMapping("/api/vehicles")
 public class VoziloController {
-  private final VoziloService service;
-  public VoziloController(VoziloService s){ this.service = s; }
+    private final VoziloService service;
 
-  // GET /api/vehicles  (auth required, kao checkAuthentication)
-  @GetMapping
-  public ResponseEntity<List<VehicleDto>> myVehicles(Authentication auth){
-    var idOsoba = requireUserId(auth);
-    return ResponseEntity.ok(service.getForOsoba(idOsoba));
-  }
+    public VoziloController(VoziloService s) {
+        this.service = s;
+    }
 
-  // POST /api/vehicles (auth required)
-  @PostMapping
-  public ResponseEntity<VehicleDto> create(Authentication auth, @Valid @RequestBody VehicleCreateDto body){
-    var idOsoba = requireUserId(auth);
-    var created = service.addForOsoba(idOsoba, body);
-    return ResponseEntity.status(201).body(created);
-  }
+    // GET /api/vehicles - dohvati vozila trenutnog korisnika
+    @GetMapping
+    public ResponseEntity<List<VehicleDto>> myVehicles(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Long idOsoba = requireUserId(jwt);
+        return ResponseEntity.ok(service.getForOsoba(idOsoba));
+    }
 
-  // DELETE /api/vehicles/{id} (samo administrator)
-  @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMINISTRATOR')")
-  public ResponseEntity<?> delete(@PathVariable("id") Long id){
-    service.deleteById(id);
-    return ResponseEntity.ok(new Message("Vozilo " + id + " je obrisano."));
-  }
+    // POST /api/vehicles - dodaj novo vozilo za trenutnog korisnika
+    @PostMapping
+    public ResponseEntity<VehicleDto> create(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody VehicleCreateDto body
+    ) {
+        Long idOsoba = requireUserId(jwt);
+        var created = service.addForOsoba(idOsoba, body);
+        return ResponseEntity.status(201).body(created);
+    }
 
-  private Long requireUserId(Authentication auth){
-    if (auth == null || !(auth.getPrincipal() instanceof SpringOsobaPrincipal p))
-      throw new Unauthorized("Pristup odbijen. Prijavite se za nastavak.");
-    var o = p.getOsoba();
-    return o.getIdOsoba();
-  }
+    // DELETE /api/vehicles/{id} - samo administrator
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
+        service.deleteById(id);
+        return ResponseEntity.ok(new Message("Vozilo " + id + " je obrisano."));
+    }
 
-  public record Message(String message){}
-  public static class Unauthorized extends RuntimeException {
-    public Unauthorized(String m){ super(m); }
-  }
+    // Helper metoda za dohvat id_osoba iz JWT tokena
+    private Long requireUserId(Jwt jwt) {
+        if (jwt == null) {
+            throw new Unauthorized("Pristup odbijen. Prijavite se za nastavak.");
+        }
+
+        // Dohvati id_osoba iz JWT claima
+        Long idOsoba = jwt.getClaim("id_osoba");
+        
+        if (idOsoba == null) {
+            throw new Unauthorized("Nevažeći token - nedostaje id korisnika.");
+        }
+
+        return idOsoba;
+    }
+
+    // DTO i Exception classes
+    public record Message(String message) {}
+
+    public static class Unauthorized extends RuntimeException {
+        public Unauthorized(String m) {
+            super(m);
+        }
+    }
 }

@@ -18,7 +18,7 @@ function Vozila({ user }) {
   useEffect(() => {
     if (user) {
       axios
-        .get("http://localhost:5000/api/vozila", { withCredentials: true })
+        .get("http://localhost:8080/api/vehicles", { withCredentials: true })
         .then((res) => setVozila(res.data))
         .catch((err) => console.error("Greška pri dohvaćanju vozila:", err));
     }
@@ -27,33 +27,54 @@ function Vozila({ user }) {
   // marke automobila
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/marke")
+      .get("http://localhost:8080/api/marke")
       .then((res) => setMarke(res.data))
       .catch((err) => console.error("Greška pri dohvaćanju marki:", err));
   }, []);
 
   // modeli odredjene marke
   useEffect(() => {
-    if (novoVozilo.id_marka) {
-      axios
-        .get(`http://localhost:5000/api/modeli/${novoVozilo.id_marka}`)
-        .then((res) => setModeli(res.data))
-        .catch((err) => console.error("Greška pri dohvaćanju modela:", err));
-    } else {
-      setModeli([]);
-    }
-  }, [novoVozilo.id_marka]);
+  if (novoVozilo.id_marka) {
+    console.log("🔍 Dohvaćam modele za marku ID:", novoVozilo.id_marka);  // ← NOVA LINIJA
+    
+    axios
+      .get(`http://localhost:8080/api/modeli/${novoVozilo.id_marka}`)
+      .then((res) => {
+        console.log("✅ Modeli primljeni:", res.data);  // ← NOVA LINIJA
+        setModeli(res.data);
+      })
+      .catch((err) => console.error("❌ Greška pri dohvaćanju modela:", err));
+  } else {
+    setModeli([]);
+  }
+}, [novoVozilo.id_marka]);
+
+useEffect(() => {
+  console.log("Primljeni modeli:", modeli);
+}, [modeli]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNovoVozilo({ ...novoVozilo, [name]: value });
-  };
+    const { name, value } = e.target;
+    setNovoVozilo({ ...novoVozilo, [name]: value });
+  };
+
+
+
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+  console.log("Šaljem vozilo: ", novoVozilo);
+  console.log("Šaljem:", {
+  id_model: Number(novoVozilo.id_model),
+  registracija: novoVozilo.registracija,
+  godina_proizvodnje: Number(novoVozilo.godina_proizvodnje)
+});
+
   try {
     await axios.post(
-      "http://localhost:5000/api/vozila",
+      
+      
+      "http://localhost:8080/api/vehicles",
       {
         id_model: Number(novoVozilo.id_model),
         registracija: novoVozilo.registracija,
@@ -62,7 +83,7 @@ const handleSubmit = async (e) => {
       { withCredentials: true }
     );
 
-    const response = await axios.get("http://localhost:5000/api/vozila", {
+    const response = await axios.get("http://localhost:8080/api/vehicles", {
       withCredentials: true,
     });
     setVozila(response.data);
@@ -114,7 +135,7 @@ const handleSubmit = async (e) => {
                 >
                   <option value="">Odaberi marku...</option>
                   {marke.map((m) => (
-                    <option key={m.id_marka} value={m.id_marka}>
+                    <option key={m.idMarka} value={m.idMarka}>
                       {m.naziv}
                     </option>
                   ))}
@@ -133,7 +154,7 @@ const handleSubmit = async (e) => {
                 >
                   <option value="">Odaberi model...</option>
                   {modeli.map((mod) => (
-                    <option key={mod.id_model} value={mod.id_model}>
+                    <option key={mod.idModel} value={mod.idModel}>
                       {mod.naziv}
                     </option>
                   ))}

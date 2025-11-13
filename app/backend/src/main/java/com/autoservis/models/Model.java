@@ -2,6 +2,7 @@ package com.autoservis.models;
 
 import com.autoservis.models.Marka;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity @Table(name="model")
 public class Model {
@@ -11,8 +12,9 @@ public class Model {
 
   private String naziv;
 
+  @JsonIgnore
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name="id_marka")
+  @JoinColumn(name = "id_marka")
   private Marka marka;
 
   protected Model() {}
