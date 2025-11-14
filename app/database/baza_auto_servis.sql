@@ -1,7 +1,7 @@
-CREATE TYPE tip_uloge AS ENUM ('korisnik', 'serviser', 'administrator');
-CREATE TYPE status_prijave AS ENUM ('zaprimljeno', 'u obradi', 'završeno', 'odgođeno');
-CREATE TYPE tip_obrasca AS ENUM ('predaja', 'preuzimanje');
-CREATE TYPE format_izvjestaja AS ENUM ('pdf', 'xml', 'xlsx');
+--CREATE TYPE tip_uloge AS ENUM ('korisnik', 'serviser', 'administrator');
+--CREATE TYPE status_prijave AS ENUM ('zaprimljeno', 'u obradi', 'završeno', 'odgođeno');
+--CREATE TYPE tip_obrasca AS ENUM ('predaja', 'preuzimanje');
+--CREATE TYPE format_izvjestaja AS ENUM ('pdf', 'xml', 'xlsx');
 
 CREATE TABLE osoba (
     id_osoba SERIAL PRIMARY KEY,
@@ -11,7 +11,8 @@ CREATE TABLE osoba (
 	  email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
 	),
     telefon VARCHAR(20) CHECK (telefon ~ '^\+?[0-9\s\-]+$'),
-    uloga tip_uloge NOT NULL DEFAULT 'korisnik',
+    --uloga tip_uloge NOT NULL DEFAULT 'korisnik',
+    uloga VARCHAR(50) CHECK (uloga IN ('korisnik', 'serviser', 'administrator')),
     oauth_id VARCHAR(255) UNIQUE NOT NULL
 );
 
@@ -63,7 +64,8 @@ CREATE TABLE prijava_servisa (
     id_vozilo INT REFERENCES vozilo(id_vozilo) ON DELETE CASCADE,
     id_serviser INT REFERENCES serviser(id_serviser) ON DELETE SET NULL,
     id_termin INT REFERENCES termin(id_termin) ON DELETE SET NULL,
-    status status_prijave DEFAULT 'zaprimljeno'::status_prijave NOT NULL,
+    --status status_prijave DEFAULT 'zaprimljeno'::status_prijave NOT NULL,
+    status VARCHAR(50) CHECK (status IN ('zaprimljeno', 'u obradi', 'završeno', 'odgođeno')),
     datum_prijave TIMESTAMP NOT NULL,
     datum_predaje TIMESTAMP,
     datum_preuzimanja TIMESTAMP,
@@ -96,14 +98,16 @@ CREATE TABLE napomena_servisera (
 CREATE TABLE obrazac (
     id_obrazac SERIAL PRIMARY KEY,
     id_prijava INT REFERENCES prijava_servisa(id_prijava) ON DELETE CASCADE,
-    tip tip_obrasca NOT NULL,
+    --tip tip_obrasca NOT NULL,
+    tip VARCHAR(50) CHECK (tip IN ('predaja', 'preuzimanje')),
     putanja_pdf TEXT NOT NULL,
     datum_generiranja TIMESTAMP NOT NULL
 );
 
 CREATE TABLE izvjestaj (
     id_izvjestaj SERIAL PRIMARY KEY,
-    format format_izvjestaja NOT NULL,
+    --format format_izvjestaja NOT NULL,
+    format VARCHAR(50) CHECK (format IN ('pdf', 'xml', 'xlsx')),
     datum_generiranja TIMESTAMP NOT NULL,
     putanja_dat TEXT NOT NULL
 );
