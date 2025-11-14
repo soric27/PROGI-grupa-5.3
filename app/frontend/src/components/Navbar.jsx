@@ -8,8 +8,10 @@ const TOKEN_KEY = "auth_token";
 
 function Navbar({ user }) {
   const [showLogin, setShowLogin] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true); // Novo: za mobile toggle
 
   const handleToggleLogin = () => setShowLogin((v) => !v);
+  const handleNavCollapse = () => setIsNavCollapsed(!isNavCollapsed); // Toggle funkcija
 
   // JWT logout: obriši token i refreshaj app (nije potreban poziv backendu)
   const handleLogout = (e) => {
@@ -30,16 +32,47 @@ function Navbar({ user }) {
             Auto Servis
           </Link>
 
-          <div className="collapse navbar-collapse">
+          {/* HAMBURGER BUTTON - prikazuje se samo na mobitelu */}
+          <button 
+            className="navbar-toggler" 
+            type="button" 
+            onClick={handleNavCollapse}
+            aria-controls="navbarNav" 
+            aria-expanded={!isNavCollapsed} 
+            aria-label="Toggle navigation"
+          >
+            <span className="navbar-toggler-icon"></span>
+          </button>
+
+          {/* Navbar sadržaj - responsive collapse */}
+          <div className={`${isNavCollapsed ? 'collapse' : ''} navbar-collapse`} id="navbarNav">
             <ul className="navbar-nav ms-auto">
               <li className="nav-item">
-                <Link className="nav-link" to="/">Početna</Link>
+                <Link 
+                  className="nav-link" 
+                  to="/" 
+                  onClick={() => setIsNavCollapsed(true)}
+                >
+                  Početna
+                </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/vozila">Vozila</Link>
+                <Link 
+                  className="nav-link" 
+                  to="/vozila" 
+                  onClick={() => setIsNavCollapsed(true)}
+                >
+                  Vozila
+                </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/kontakt">Kontakt</Link>
+                <Link 
+                  className="nav-link" 
+                  to="/kontakt" 
+                  onClick={() => setIsNavCollapsed(true)}
+                >
+                  Kontakt
+                </Link>
               </li>
 
               <li className="nav-item ms-3">
@@ -51,7 +84,13 @@ function Navbar({ user }) {
                     </button>
                   </>
                 ) : (
-                  <button onClick={handleToggleLogin} className="btn btn-outline-light">
+                  <button 
+                    onClick={() => {
+                      handleToggleLogin();
+                      setIsNavCollapsed(true); // Zatvori navbar nakon klika na login
+                    }} 
+                    className="btn btn-outline-light"
+                  >
                     Login
                   </button>
                 )}
@@ -61,6 +100,7 @@ function Navbar({ user }) {
         </div>
       </nav>
 
+      {/* Login overlay - OVDJE JE TVOJ GOOGLE LOGIN LINK */}
       {showLogin && !user && (
         <div className="login-overlay bg-secondary bg-opacity-25 py-5">
           <div className="login-box bg-light p-4 text-dark rounded shadow">
