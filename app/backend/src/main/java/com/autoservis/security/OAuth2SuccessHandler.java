@@ -22,7 +22,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final JwtEncoder encoder;
     private final OsobaRepository osobaRepository;
 
-    @Value("${app.frontend-url}")
+    @Value("${FRONTEND_URL}")
     private String frontendUrl;
 
     public OAuth2SuccessHandler(JwtEncoder encoder, OsobaRepository osobaRepository) {

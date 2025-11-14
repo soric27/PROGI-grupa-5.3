@@ -15,7 +15,7 @@ import com.autoservis.security.OAuth2UserService;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-  @Value("${app.frontend-url}") private String frontendUrl;
+  @Value("${FRONTEND_URL}") private String frontendUrl;
   private final OAuth2UserService oAuth2UserService;
   public SecurityConfig(OAuth2UserService svc){ this.oAuth2UserService = svc; }
 
