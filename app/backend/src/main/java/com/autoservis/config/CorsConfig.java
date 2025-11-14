@@ -9,13 +9,17 @@ import java.util.List;
 
 @Configuration
 public class CorsConfig {
-  @Value("${app.frontend-url:https://autoservis-hxov.onrender.com}")
+  @Value("${app.frontend-url:https://progi-grupa-5-3-vnly.onrender.com}")
   private String frontend;
 
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration cfg = new CorsConfiguration();
-    cfg.setAllowedOrigins(List.of(frontend, "http://localhost:3000", "https://*.onrender.com"));
+    cfg.setAllowedOrigins(List.of(
+    frontend, // iz env varijable, npr. https://progi-grupa-5-3-vnly.onrender.com
+    "http://localhost:3000"
+));
+
     cfg.setAllowedMethods(List.of("GET","POST","PATCH","PUT","DELETE","OPTIONS"));
     cfg.setAllowedHeaders(List.of("*"));
     cfg.setAllowCredentials(true);
