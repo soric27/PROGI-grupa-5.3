@@ -67,7 +67,7 @@ function Navbar({ user }) {
             <h5 className="text-center mb-3">Prijava korisnika</h5>
             <div className="text-center">
               <a
-                href={`APIURL/oauth2/authorization/google`}
+                href="https://autoservis-java.onrender.com/login/oauth2/code/google"
                 className="btn btn-danger btn-lg"
                 onClick={() => setShowLogin(false)}
               >
