@@ -18,7 +18,7 @@ function Vozila({ user }) {
   useEffect(() => {
     if (user) {
       axios
-        .get("http://localhost:8080/api/vehicles", { withCredentials: true })
+        .get("/api/vehicles", { withCredentials: true })
         .then((res) => setVozila(res.data))
         .catch((err) => console.error("Greška pri dohvaćanju vozila:", err));
     }
@@ -27,7 +27,7 @@ function Vozila({ user }) {
   // marke automobila
   useEffect(() => {
     axios
-      .get("http://localhost:8080/api/marke")
+      .get("/api/marke")
       .then((res) => setMarke(res.data))
       .catch((err) => console.error("Greška pri dohvaćanju marki:", err));
   }, []);
@@ -38,7 +38,7 @@ function Vozila({ user }) {
     console.log("🔍 Dohvaćam modele za marku ID:", novoVozilo.id_marka);  // ← NOVA LINIJA
     
     axios
-      .get(`http://localhost:8080/api/modeli/${novoVozilo.id_marka}`)
+      .get(`/api/modeli/${novoVozilo.id_marka}`)
       .then((res) => {
         console.log("✅ Modeli primljeni:", res.data);  // ← NOVA LINIJA
         setModeli(res.data);
@@ -74,7 +74,7 @@ const handleSubmit = async (e) => {
     await axios.post(
       
       
-      "http://localhost:8080/api/vehicles",
+      "/api/vehicles",
       {
         id_model: Number(novoVozilo.id_model),
         registracija: novoVozilo.registracija,
@@ -83,7 +83,7 @@ const handleSubmit = async (e) => {
       { withCredentials: true }
     );
 
-    const response = await axios.get("http://localhost:8080/api/vehicles", {
+    const response = await axios.get("/api/vehicles", {
       withCredentials: true,
     });
     setVozila(response.data);
