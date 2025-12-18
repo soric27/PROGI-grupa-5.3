@@ -1,8 +1,3 @@
---CREATE TYPE tip_uloge AS ENUM ('korisnik', 'serviser', 'administrator');
---CREATE TYPE status_prijave AS ENUM ('zaprimljeno', 'u obradi', 'završeno', 'odgođeno');
---CREATE TYPE tip_obrasca AS ENUM ('predaja', 'preuzimanje');
---CREATE TYPE format_izvjestaja AS ENUM ('pdf', 'xml', 'xlsx');
-
 CREATE TABLE osoba (
     id_osoba SERIAL PRIMARY KEY,
     ime VARCHAR(100) NOT NULL,
@@ -10,8 +5,7 @@ CREATE TABLE osoba (
     email VARCHAR(100) UNIQUE NOT NULL CHECK (
 	  email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
 	),
-    telefon VARCHAR(20) CHECK (telefon ~ '^\+?[0-9\s\-]+$'),
-    --uloga tip_uloge NOT NULL DEFAULT 'korisnik',
+    telefon VARCHAR(20) CHECK (telefon ~ '^\+?[0-9\s]+$'),
     uloga VARCHAR(50) CHECK (uloga IN ('korisnik', 'serviser', 'administrator')),
     oauth_id VARCHAR(255) UNIQUE NOT NULL
 );
@@ -33,8 +27,7 @@ CREATE TABLE vozilo (
     id_osoba INT REFERENCES osoba(id_osoba) ON DELETE CASCADE,--vlasnik
     id_model INT REFERENCES model(id_model) ON DELETE RESTRICT,
     registracija VARCHAR(20) UNIQUE NOT NULL,
-    godina_proizvodnje INT CHECK (godina_proizvodnje BETWEEN 1950 AND EXTRACT(YEAR FROM CURRENT_DATE))
-
+    godina_proizvodnje INT CHECK (godina_proizvodnje <= EXTRACT(YEAR FROM CURRENT_DATE))
 );
 
 CREATE TABLE servis (
@@ -54,8 +47,6 @@ CREATE TABLE serviser (
 CREATE TABLE termin (
     id_termin SERIAL PRIMARY KEY,
     datum_vrijeme TIMESTAMP NOT NULL,
-    --trajanje INTERVAL NOT NULL,
-    --end_time TIMESTAMP GENERATED ALWAYS AS (datum_vrijeme + trajanje) STORED,
     zauzet BOOLEAN DEFAULT FALSE
 );
 
@@ -64,7 +55,6 @@ CREATE TABLE prijava_servisa (
     id_vozilo INT REFERENCES vozilo(id_vozilo) ON DELETE CASCADE,
     id_serviser INT REFERENCES serviser(id_serviser) ON DELETE SET NULL,
     id_termin INT REFERENCES termin(id_termin) ON DELETE SET NULL,
-    --status status_prijave DEFAULT 'zaprimljeno'::status_prijave NOT NULL,
     status VARCHAR(50) CHECK (status IN ('zaprimljeno', 'u obradi', 'završeno', 'odgođeno')),
     datum_prijave TIMESTAMP NOT NULL,
     datum_predaje TIMESTAMP,
@@ -84,41 +74,30 @@ CREATE TABLE rezervacija_zamjene (
     id_prijava INT REFERENCES prijava_servisa(id_prijava) ON DELETE CASCADE,
     id_zamjena INT REFERENCES zamjena_vozilo(id_zamjena) ON DELETE CASCADE,
     datum_od DATE NOT NULL,
-    datum_do DATE NOT NULL,
-    CHECK (datum_do >= datum_od)
+    datum_do DATE NOT NULL
 );
 
 CREATE TABLE napomena_servisera (
     id_napomena SERIAL PRIMARY KEY,
     id_prijava INT REFERENCES prijava_servisa(id_prijava) ON DELETE CASCADE,
     datum TIMESTAMP NOT NULL,
-    opis TEXT NOT NULL -- da je null nebi imalo smisla
+    opis TEXT
 );
 
 CREATE TABLE obrazac (
     id_obrazac SERIAL PRIMARY KEY,
     id_prijava INT REFERENCES prijava_servisa(id_prijava) ON DELETE CASCADE,
-    --tip tip_obrasca NOT NULL,
-    tip VARCHAR(50) CHECK (tip IN ('predaja', 'preuzimanje')),
+    tip VARCHAR(20) CHECK (tip IN ('predaja', 'preuzimanje')),
     putanja_pdf TEXT NOT NULL,
     datum_generiranja TIMESTAMP NOT NULL
 );
 
 CREATE TABLE izvjestaj (
     id_izvjestaj SERIAL PRIMARY KEY,
-    --format format_izvjestaja NOT NULL,
-    format VARCHAR(50) CHECK (format IN ('pdf', 'xml', 'xlsx')),
+    format VARCHAR(20) CHECK (format IN ('pdf', 'xml', 'xlsx')),
     datum_generiranja TIMESTAMP NOT NULL,
     putanja_dat TEXT NOT NULL
 );
-
--- indeksi za ubrzanje pretrage
-CREATE INDEX idx_osoba_email ON osoba(email);
-CREATE INDEX idx_vozilo_registracija ON vozilo(registracija);
-CREATE INDEX idx_prijava_status ON prijava_servisa(status);
-CREATE INDEX idx_prijava_serviser ON prijava_servisa(id_serviser);
-CREATE INDEX idx_marka_naziv ON marka(naziv);
-CREATE INDEX idx_serviser_voditelj ON serviser (id_servis, je_li_voditelj);
 
 INSERT INTO marka (naziv) VALUES
 ('Audi'),

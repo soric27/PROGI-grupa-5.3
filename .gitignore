@@ -3,3 +3,25 @@ node_modules/
 *.log
 .vscode/
 .DS_Store
+# Build artifacts
+app/backend/target/
+backend/target/
+*.jar
+*.class
+
+# Java JDK
+oracleJdk-25/
+jdk*/
+*.jdk
+
+# Node modules (frontend)
+node_modules/
+app/frontend/node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment
+.env
