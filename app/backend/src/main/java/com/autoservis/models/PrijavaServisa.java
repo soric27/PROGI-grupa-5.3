@@ -50,7 +50,11 @@ public class PrijavaServisa {
         this.datumPrijave = LocalDateTime.now();
     }
 
+    @OneToMany(mappedBy = "prijavaServisa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<NapomenaServisera> napomene = new java.util.ArrayList<>();
+
     // Getteri i Setteri
+    public java.util.List<NapomenaServisera> getNapomene() { return napomene; }
     public Long getIdPrijava() { return idPrijava; }
     public Vozilo getVozilo() { return vozilo; }
     public Serviser getServiser() { return serviser; }

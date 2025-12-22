@@ -1,0 +1,15 @@
+package com.autoservis.interfaces.dto;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+public record PrijavaDetaljiDto(
+    Long idPrijava,
+    String status,
+    LocalDateTime datumTermina,
+    String voziloInfo, // "Audi A4 (ZG-1234-AB)"
+    String vlasnikInfo, // "Pero Perić, pero@email.com"
+    String serviserIme,
+    String napomenaVlasnika,
+    List<NapomenaDto> napomeneServisera
+) {}
