@@ -3,7 +3,7 @@ package com.autoservis.interfaces.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record PrijavaDetaljiDto(
+public record PrijavaDetalleDto(
     Long idPrijava,
     String status,
     LocalDateTime datumTermina,

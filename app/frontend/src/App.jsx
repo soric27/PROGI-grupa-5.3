@@ -11,6 +11,7 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Vozila from "./pages/Vozila";
 import Kontakt from "./pages/Kontakt";
+import RoleSelection from "./pages/RoleSelection";
 
 // --- AXIOS GLOBAL ---
 axios.defaults.baseURL = process.env.REACT_APP_API_URL;
@@ -99,6 +100,7 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/vozila" element={<Vozila user={user} />} />
           <Route path="/kontakt" element={<Kontakt />} />
+          <Route path="/role-selection" element={<RoleSelection />} />
         </Routes>
       </div>
     </>

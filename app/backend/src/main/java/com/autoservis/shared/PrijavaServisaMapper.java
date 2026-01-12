@@ -1,15 +1,16 @@
 package com.autoservis.shared;
 
+import java.util.Comparator;
+import java.util.stream.Collectors;  // ← PROMIJENI
+
 import com.autoservis.interfaces.dto.NapomenaDto;
-import com.autoservis.interfaces.dto.PrijavaDetaljiDto;
+import com.autoservis.interfaces.dto.PrijavaDetalleDto;
 import com.autoservis.models.NapomenaServisera;
 import com.autoservis.models.PrijavaServisa;
-import java.util.Comparator;
-import java.util.stream.Collectors;
 
 public class PrijavaServisaMapper {
 
-    public static PrijavaDetaljiDto toDetailDto(PrijavaServisa p) {
+    public static PrijavaDetalleDto toDetailDto(PrijavaServisa p) {  // ← PROMIJENI
         var vozilo = p.getVozilo();
         var vlasnik = vozilo.getOsoba();
         var serviser = p.getServiser().getOsoba();
@@ -29,7 +30,7 @@ public class PrijavaServisaMapper {
                 .map(n -> new NapomenaDto(n.getIdNapomena(), n.getDatum(), n.getOpis()))
                 .collect(Collectors.toList());
 
-        return new PrijavaDetaljiDto(
+        return new PrijavaDetalleDto(  // ← PROMIJENI
                 p.getIdPrijava(),
                 p.getStatus(),
                 p.getTermin().getDatumVrijeme(),

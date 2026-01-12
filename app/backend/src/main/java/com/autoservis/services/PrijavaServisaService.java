@@ -1,14 +1,26 @@
 package com.autoservis.services;
 
-import com.autoservis.interfaces.dto.NapomenaCreateDto;
-import com.autoservis.interfaces.dto.PrijavaServisaCreateDto;
-import com.autoservis.models.*;
-import com.autoservis.repositories.*;
-import com.autoservis.shared.PrijavaServisaMapper;
+import java.util.List;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.autoservis.interfaces.dto.NapomenaCreateDto;
+import com.autoservis.interfaces.dto.PrijavaDetalleDto;
+import com.autoservis.interfaces.dto.PrijavaServisaCreateDto;
+import com.autoservis.models.NapomenaServisera;
+import com.autoservis.models.PrijavaServisa;
+import com.autoservis.models.Serviser;           // ← DODAJ OVU LINIJU
+import com.autoservis.models.Termin;
+import com.autoservis.models.Vozilo;
+import com.autoservis.repositories.NapomenaServiseraRepository;
+import com.autoservis.repositories.PrijavaServisaRepository;
+import com.autoservis.repositories.ServiserRepository;
+import com.autoservis.repositories.TerminRepository;
+import com.autoservis.repositories.VoziloRepository;
+import com.autoservis.shared.PrijavaServisaMapper;
+
 
 @Service
 public class PrijavaServisaService {
@@ -56,13 +68,10 @@ public class PrijavaServisaService {
                 vozilo, serviser, termin, dto.napomenaVlasnika()
         );
         prijave.save(novaPrijava);
-        
-        // Ovdje bi se mogla vratiti DTO verzija spremljene prijave ako je potrebno
     }
 
-     @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public List<PrijavaDetalleDto> getPrijaveForKorisnik(Long idOsoba) {
-        // Ovdje bi se mogao dodati direktan upit u repozitorij za efikasnost
         return prijave.findAll().stream()
                 .filter(p -> p.getVozilo().getOsoba().getIdOsoba().equals(idOsoba))
                 .map(PrijavaServisaMapper::toDetailDto)
@@ -74,7 +83,6 @@ public class PrijavaServisaService {
         Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsoba)
                 .orElseThrow(() -> new AccessDeniedException("Osoba nije serviser."));
         
-        // Ovdje bi se također mogao dodati custom upit
         return prijave.findAll().stream()
                 .filter(p -> p.getServiser().getIdServiser().equals(serviser.getIdServiser()))
                 .map(PrijavaServisaMapper::toDetailDto)
@@ -103,12 +111,12 @@ public class PrijavaServisaService {
         PrijavaServisa prijava = prijave.findById(idPrijava)
                 .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
          
-        // SIGURNOSNA PROVJERA (slična kao gore)
-         Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsobaPrincipal)
+        // SIGURNOSNA PROVJERA
+        Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsobaPrincipal)
                 .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
         
         if (!prijava.getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
-             throw new AccessDeniedException("Možete dodavati napomene samo na svoje prijave.");
+            throw new AccessDeniedException("Možete dodavati napomene samo na svoje prijave.");
         }
         
         NapomenaServisera novaNapomena = new NapomenaServisera(prijava, dto.opis());
