@@ -81,6 +81,20 @@ function Appointments({ user }) {
     }
   }, [selectedServiser, user]);
 
+  // Poll 'moje prijave' for korisnik every 10s so serviser notes appear without manual refresh
+  useEffect(() => {
+    if (!user || user.uloga !== 'korisnik') return;
+    const id = setInterval(async () => {
+      try {
+        const r = await axios.get('/api/appointments/prijave/moje');
+        setMojePrijave(r.data);
+      } catch (e) {
+        console.error(e);
+      }
+    }, 10000);
+    return () => clearInterval(id);
+  }, [user]);
+
   const handleBook = async (e) => {
     e.preventDefault();
     if (!user) { setError("Molimo prijavite se prije rezervacije termina."); return; }
@@ -352,7 +366,10 @@ function Appointments({ user }) {
 
             <div className="card mb-4">
               <div className="card-body">
-                <h5 className="card-title">Moje prijave</h5>
+                <div className="d-flex align-items-center justify-content-between">
+                  <h5 className="card-title mb-0">Moje prijave</h5>
+                  <button className="btn btn-sm btn-outline-secondary" onClick={async ()=>{ const r = await axios.get(`/api/appointments/prijave/moje`); setMojePrijave(r.data); }}>Osvježi</button>
+                </div>
                 {mojePrijave.length === 0 && <div className="text-muted">Nema prijava</div>}
                 <ul className="list-group mt-2">
                   {mojePrijave.map(p => (
@@ -362,6 +379,8 @@ function Appointments({ user }) {
                         <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
                         <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
                         <div><strong>Serviser:</strong> {p.serviserIme}</div>
+                        <div className="mt-2"><strong>Napomena vlasnika:</strong> {p.napomenaVlasnika || <span className="text-muted">-</span>}</div>
+                        <div><strong>Napomena servisera:</strong> {p.napomeneServisera && p.napomeneServisera.length ? p.napomeneServisera[0].opis : <span className="text-muted">-</span>}</div>
                       </div>
                       <div>
                         {user && (
@@ -404,6 +423,8 @@ function Appointments({ user }) {
                         <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
                         <div><strong>Vlasnik:</strong> {p.vlasnikInfo}</div>
                         <div><strong>Status:</strong> {p.status}</div>
+                        <div className="mt-2"><strong>Napomena vlasnika:</strong> {p.napomenaVlasnika || <span className="text-muted">-</span>}</div>
+                        <div><strong>Napomena servisera:</strong> {p.napomeneServisera && p.napomeneServisera.length ? p.napomeneServisera[0].opis : <span className="text-muted">-</span>}</div>
                       </div>
                       <div className="d-flex gap-2">
                         {/* Serviser can postpone term, change status, add note */}
