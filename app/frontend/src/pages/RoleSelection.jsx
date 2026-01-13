@@ -9,7 +9,8 @@ function RoleSelection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const token = searchParams.get("token");
+  const tokenFromQuery = searchParams.get("token");
+  const token = tokenFromQuery || sessionStorage.getItem("auth_token");
 
   // Ako nema tokena, preusmjeri na home
   useEffect(() => {
@@ -35,8 +36,8 @@ function RoleSelection() {
       sessionStorage.setItem("auth_token", response.data.token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.token}`;
 
-      // Preusmjeri na home
-      navigate("/");
+      // Preusmjeri na home (full reload so App sees updated token)
+      window.location.replace("/");
     } catch (err) {
       console.error("Greška pri izboru uloge:", err);
       setError("Greška pri izboru uloge. Pokušajte ponovno.");

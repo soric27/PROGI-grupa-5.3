@@ -85,6 +85,17 @@ function Navbar({ user }) {
                 </Link>
               </li>
 
+              <li className="nav-item">
+                <Link 
+                  className="nav-link" 
+                  to="/role-selection" 
+                  onClick={() => setIsNavCollapsed(true)}
+                  title="Ako već imaš token u sessionStorage, ovdje možeš ručno odabrati ulogu"
+                >
+                  Odabir uloge
+                </Link>
+              </li>
+
               <li className="nav-item ms-3">
                 {user ? (
                   <>
