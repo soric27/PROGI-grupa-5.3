@@ -14,6 +14,9 @@ import com.autoservis.repositories.OsobaRepository;
 import com.autoservis.repositories.ServiserRepository;
 import com.autoservis.security.JwtTokenProvider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jakarta.validation.constraints.NotBlank;
 
 @RestController
@@ -23,6 +26,8 @@ public class RoleSelectionController {
     private final OsobaRepository osobaRepository;
     private final ServiserRepository serviserRepository;
     private final JwtTokenProvider jwtProvider;
+
+    private final Logger log = LoggerFactory.getLogger(RoleSelectionController.class);
 
     public RoleSelectionController(OsobaRepository osobaRepository, ServiserRepository serviserRepository, JwtTokenProvider jwtProvider) {
         this.osobaRepository = osobaRepository;
@@ -42,8 +47,23 @@ public class RoleSelectionController {
             );
         }
 
-        // Dohvati korisnika iz baze
-        Long idOsoba = jwt.getClaim("id_osoba");
+        // Dohvati korisnika iz baze (sigurno parsiranje id_osoba)
+        Long idOsoba;
+        try {
+            Object claim = jwt.getClaim("id_osoba");
+            if (claim instanceof Number) {
+                idOsoba = ((Number) claim).longValue();
+            } else if (claim instanceof String) {
+                idOsoba = Long.parseLong((String) claim);
+            } else {
+                log.warn("Nevažeći tip za claim id_osoba: {}", claim == null ? "null" : claim.getClass().getName());
+                return ResponseEntity.status(400).body(new ErrorResponse("Nevažeći token (id_osoba)."));
+            }
+        } catch (Exception ex) {
+            log.error("Greška pri parsiranju id_osoba iz JWT: {}", ex.toString());
+            return ResponseEntity.status(400).body(new ErrorResponse("Nevažeći token (id_osoba)."));
+        }
+
         Osoba osoba = osobaRepository.findById(idOsoba)
             .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
 
@@ -61,10 +81,15 @@ public class RoleSelectionController {
 
         // Ako je odabrana uloga "serviser", osiguraj da postoji zapis u tablici serviser
         if ("serviser".equals(novaUloga)) {
-            serviserRepository.findByOsoba_IdOsoba(idOsoba).orElseGet(() -> {
-                Serviser s = new Serviser(osoba, false);
-                return serviserRepository.save(s);
-            });
+            try {
+                serviserRepository.findByOsoba_IdOsoba(idOsoba).orElseGet(() -> {
+                    Serviser s = new Serviser(osoba, false);
+                    return serviserRepository.save(s);
+                });
+            } catch (Exception ex) {
+                log.error("Neuspjelo kreiranje serviser-a za id {}: {}", idOsoba, ex.toString());
+                return ResponseEntity.status(500).body(new ErrorResponse("Pogreška pri stvaranju servisera. Kontaktirajte administratora."));
+            }
         }
 
         // Generiraj novi token sa novom ulogom

@@ -40,7 +40,8 @@ function RoleSelection() {
       window.location.replace("/");
     } catch (err) {
       console.error("Greška pri izboru uloge:", err);
-      setError("Greška pri izboru uloge. Pokušajte ponovno.");
+      const msg = err?.response?.data?.message || "Greška pri izboru uloge. Pokušajte ponovno.";
+      setError(msg);
       setLoading(false);
     }
   };

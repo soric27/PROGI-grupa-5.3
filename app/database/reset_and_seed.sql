@@ -1,0 +1,199 @@
+/*
+  reset_and_seed.sql
+  ------------------
+  Idempotent script to drop and recreate the entire schema and insert seed data
+  (servisers, persons, brands/models, terms). Run in pgAdmin Query Tool or psql.
+
+  WARNING: This will remove existing data in the affected tables. Run only if
+  you are OK with wiping current DB state or on a fresh DB.
+*/
+
+-- Run in a fresh connection (some DDL forces commits) and wrap manual steps in a transaction if desired.
+
+-- DROP all application tables (reverse dependencies)
+DROP TABLE IF EXISTS rezervacija_zamjene CASCADE;
+DROP TABLE IF EXISTS obrazac CASCADE;
+DROP TABLE IF EXISTS napomena_servisera CASCADE;
+DROP TABLE IF EXISTS prijava_servisa CASCADE;
+DROP TABLE IF EXISTS termin CASCADE;
+DROP TABLE IF EXISTS serviser CASCADE;
+DROP TABLE IF EXISTS servis CASCADE;
+DROP TABLE IF EXISTS vozilo CASCADE;
+DROP TABLE IF EXISTS zamjena_vozilo CASCADE;
+DROP TABLE IF EXISTS model CASCADE;
+DROP TABLE IF EXISTS marka CASCADE;
+DROP TABLE IF EXISTS osoba CASCADE;
+DROP TABLE IF EXISTS izvjestaj CASCADE;
+
+-- === CREATE SCHEMA ===
+
+CREATE TABLE osoba (
+    id_osoba SERIAL PRIMARY KEY,
+    ime VARCHAR(100) NOT NULL,
+    prezime VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL CHECK (
+      email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+    ),
+    telefon VARCHAR(20) CHECK (telefon ~ '^\+?[0-9\s]+$'),
+    uloga VARCHAR(50) NOT NULL DEFAULT 'korisnik' CHECK (uloga IN ('korisnik', 'serviser', 'administrator')),
+    oauth_id VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE marka (
+    id_marka SERIAL PRIMARY KEY,
+    naziv VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE model (
+    id_model SERIAL PRIMARY KEY,
+    id_marka INT NOT NULL REFERENCES marka(id_marka) ON DELETE CASCADE,
+    naziv VARCHAR(50) NOT NULL,
+    UNIQUE (id_marka, naziv)
+);
+
+CREATE TABLE servis (
+    id_servis SERIAL PRIMARY KEY,
+    ime_servisa VARCHAR(100) NOT NULL,
+    lokacija TEXT
+);
+
+CREATE TABLE serviser (
+    id_serviser SERIAL PRIMARY KEY,
+    id_osoba INT NOT NULL UNIQUE REFERENCES osoba(id_osoba) ON DELETE CASCADE,
+    id_servis INT REFERENCES servis(id_servis) ON DELETE SET NULL,
+    je_li_voditelj BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE vozilo (
+    id_vozilo SERIAL PRIMARY KEY,
+    id_osoba INT REFERENCES osoba(id_osoba) ON DELETE CASCADE,
+    id_model INT REFERENCES model(id_model) ON DELETE RESTRICT,
+    registracija VARCHAR(20) UNIQUE NOT NULL,
+    godina_proizvodnje INT CHECK (godina_proizvodnje <= EXTRACT(YEAR FROM CURRENT_DATE))
+);
+
+CREATE TABLE termin (
+    id_termin SERIAL PRIMARY KEY,
+    datum_vrijeme TIMESTAMP NOT NULL,
+    zauzet BOOLEAN DEFAULT FALSE,
+    id_serviser INT REFERENCES serviser(id_serviser) ON DELETE SET NULL
+);
+
+CREATE TABLE prijava_servisa (
+    id_prijava SERIAL PRIMARY KEY,
+    id_vozilo INT REFERENCES vozilo(id_vozilo) ON DELETE CASCADE,
+    id_serviser INT REFERENCES serviser(id_serviser) ON DELETE SET NULL,
+    id_termin INT REFERENCES termin(id_termin) ON DELETE SET NULL,
+    status VARCHAR(50) CHECK (status IN ('zaprimljeno', 'u obradi', 'završeno', 'odgođeno')),
+    datum_prijave TIMESTAMP NOT NULL,
+    datum_predaje TIMESTAMP,
+    datum_preuzimanja TIMESTAMP,
+    napomena_vlasnika TEXT
+);
+
+CREATE TABLE zamjena_vozilo (
+    id_zamjena SERIAL PRIMARY KEY,
+    id_model INT REFERENCES model(id_model) ON DELETE RESTRICT,
+    registracija VARCHAR(20) UNIQUE NOT NULL,
+    dostupno BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE rezervacija_zamjene (
+    id_rezervacija SERIAL PRIMARY KEY,
+    id_prijava INT REFERENCES prijava_servisa(id_prijava) ON DELETE CASCADE,
+    id_zamjena INT REFERENCES zamjena_vozilo(id_zamjena) ON DELETE CASCADE,
+    datum_od DATE NOT NULL,
+    datum_do DATE NOT NULL
+);
+
+CREATE TABLE napomena_servisera (
+    id_napomena SERIAL PRIMARY KEY,
+    id_prijava INT REFERENCES prijava_servisa(id_prijava) ON DELETE CASCADE,
+    datum TIMESTAMP NOT NULL,
+    opis TEXT
+);
+
+CREATE TABLE obrazac (
+    id_obrazac SERIAL PRIMARY KEY,
+    id_prijava INT REFERENCES prijava_servisa(id_prijava) ON DELETE CASCADE,
+    tip VARCHAR(20) CHECK (tip IN ('predaja', 'preuzimanje')),
+    putanja_pdf TEXT NOT NULL,
+    datum_generiranja TIMESTAMP NOT NULL
+);
+
+CREATE TABLE izvjestaj (
+    id_izvjestaj SERIAL PRIMARY KEY,
+    format VARCHAR(20) CHECK (format IN ('pdf', 'xml', 'xlsx')),
+    datum_generiranja TIMESTAMP NOT NULL,
+    putanja_dat TEXT NOT NULL
+);
+
+-- === Seed data ===
+
+-- Brands
+INSERT INTO marka (naziv) VALUES
+('Audi'),('BMW'),('Volkswagen'),('Mercedes-Benz'),('Opel'),('Škoda'),('Toyota'),('Ford'),('Peugeot'),('Renault'),('Hyundai'),('Kia'),('Fiat')
+ON CONFLICT (naziv) DO NOTHING;
+
+-- Models for a few brands (trimmed for brevity)
+INSERT INTO model (id_marka, naziv) VALUES
+(1, 'A1'), (1, 'A3'), (1, 'A4'),
+(2, '3 Series'), (2, 'X3'),
+(3, 'Golf'), (3, 'Passat')
+ON CONFLICT (id_marka, naziv) DO NOTHING;
+
+-- Example servis (optional)
+INSERT INTO servis (ime_servisa, lokacija) VALUES
+('AutoServis Centar','Adresa 1')
+ON CONFLICT DO NOTHING;
+
+-- Sample people (idempotent)
+INSERT INTO osoba (ime, prezime, email, uloga, oauth_id)
+  SELECT 'Ivan','Ivić','ivan.serviser@example.com','serviser','srv-ivan'
+  WHERE NOT EXISTS (SELECT 1 FROM osoba WHERE email='ivan.serviser@example.com');
+
+INSERT INTO osoba (ime, prezime, email, uloga, oauth_id)
+  SELECT 'Marko','Marković','marko.serviser@example.com','serviser','srv-marko'
+  WHERE NOT EXISTS (SELECT 1 FROM osoba WHERE email='marko.serviser@example.com');
+
+INSERT INTO osoba (ime, prezime, email, uloga, oauth_id)
+  SELECT 'Ana','Anić','ana.serviser@example.com','serviser','srv-ana'
+  WHERE NOT EXISTS (SELECT 1 FROM osoba WHERE email='ana.serviser@example.com');
+
+-- Ensure servisers exist for those persons
+INSERT INTO serviser (id_osoba, je_li_voditelj)
+  SELECT o.id_osoba, false FROM osoba o WHERE o.email = 'ivan.serviser@example.com' AND NOT EXISTS (SELECT 1 FROM serviser s WHERE s.id_osoba = o.id_osoba);
+
+INSERT INTO serviser (id_osoba, je_li_voditelj)
+  SELECT o.id_osoba, false FROM osoba o WHERE o.email = 'marko.serviser@example.com' AND NOT EXISTS (SELECT 1 FROM serviser s WHERE s.id_osoba = o.id_osoba);
+
+INSERT INTO serviser (id_osoba, je_li_voditelj)
+  SELECT o.id_osoba, false FROM osoba o WHERE o.email = 'ana.serviser@example.com' AND NOT EXISTS (SELECT 1 FROM serviser s WHERE s.id_osoba = o.id_osoba);
+
+-- Create terms (9:00..16:00 for next 7 days) for every serviser
+DO $$
+DECLARE
+  d date := current_date;
+  s record;
+  h int;
+  i int;
+BEGIN
+  FOR s IN SELECT id_serviser FROM serviser LOOP
+    FOR h IN 9..16 LOOP
+      FOR i IN 0..6 LOOP
+        -- avoid duplicates
+        IF NOT EXISTS (SELECT 1 FROM termin t WHERE t.datum_vrijeme = ((d + i) + (h || ':00')::time) AND t.id_serviser = s.id_serviser) THEN
+          INSERT INTO termin (datum_vrijeme, zauzet, id_serviser)
+            VALUES ((d + i) + (h || ':00')::time, false, s.id_serviser);
+        END IF;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+END$$;
+
+-- Quick checks (user-friendly output)
+-- SELECT COUNT(*) AS servisers_count FROM serviser;
+-- SELECT id_serviser, (SELECT ime||' '||prezime FROM osoba o WHERE o.id_osoba = s.id_osoba) AS imePrezime FROM serviser s ORDER BY id_serviser;
+-- SELECT id_serviser, COUNT(*) AS cnt FROM termin GROUP BY id_serviser ORDER BY id_serviser;
+
+/* End of script */
