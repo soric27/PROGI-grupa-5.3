@@ -394,7 +394,7 @@ function Appointments({ user }) {
           <div className="col-md-12">
             <div className="card mb-4">
               <div className="card-body">
-                <h5 className="card-title">Prijave dodijeljene vama (samo za servisere)</h5>
+                <h5 className="card-title">Prijave dodijeljene vama</h5>
                 {dodijeljene.length === 0 && <div className="text-muted">Nema dodijeljenih prijava</div>}
                 <ul className="list-group mt-2">
                   {dodijeljene.map(p => (
@@ -498,6 +498,18 @@ function Appointments({ user }) {
                           <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
                           <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
                           <div><strong>Serviser:</strong> {p.serviserIme}</div>
+                          <div className="mt-2"><strong>Napomena vlasnika:</strong> {p.napomenaVlasnika || <span className="text-muted">-</span>}</div>
+
+                          {p.napomeneServisera && p.napomeneServisera.length > 0 && (
+                            <div className="mt-2">
+                              <strong>Napomene servisera:</strong>
+                              <ul className="list-unstyled small mb-0">
+                                {p.napomeneServisera.map(n => (
+                                  <li key={n.idNapomena}><em>{new Date(n.datum).toLocaleString()}:</em> {n.opis}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                         <div>
                           {user && (
@@ -527,7 +539,7 @@ function Appointments({ user }) {
                         </div>
                       </li>
                     ))}
-                  </ul>
+                  </ul> 
                 </div>
               </div>
             </div>

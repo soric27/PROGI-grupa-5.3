@@ -107,23 +107,27 @@ public class PrijavaService {
     }
 
     if (shouldNotify) {
-      // generate updated pdf
-      File pdf = pdfService.generatePrijavaPdf(existing);
+      try {
+        // generate updated pdf and attempt to send - failures here should not break the update
+        File pdf = pdfService.generatePrijavaPdf(existing);
 
-      String to = null;
-      if (existing.getVozilo() != null && existing.getVozilo().getOsoba() != null) to = existing.getVozilo().getOsoba().getEmail();
-      if (to != null) {
-        String subj = "Obavijest: termin servisa odgođen";
-        String body = String.format("Vaš termin servisa je promijenjen.%s\nStari termin: %s\nNovi termin: %s\nDetalji u privitku.",
-            "",
-            oldTermin != null ? oldTermin.toString() : "-",
-            newTermin != null ? newTermin.toString() : "-");
-        try {
-          emailService.sendEmailWithAttachment(to, subj, body, pdf);
-          logger.info("Sent postponement email to {} for prijava id {}", to, existing.getIdPrijava());
-        } catch (MessagingException ex) {
-          logger.error("Failed to send postponement email for prijava id {} to {}", existing.getIdPrijava(), to, ex);
+        String to = null;
+        if (existing.getVozilo() != null && existing.getVozilo().getOsoba() != null) to = existing.getVozilo().getOsoba().getEmail();
+        if (to != null) {
+          String subj = "Obavijest: termin servisa odgođen";
+          String body = String.format("Vaš termin servisa je promijenjen.%s\nStari termin: %s\nNovi termin: %s\nDetalji u privitku.",
+              "",
+              oldTermin != null ? oldTermin.toString() : "-",
+              newTermin != null ? newTermin.toString() : "-");
+          try {
+            emailService.sendEmailWithAttachment(to, subj, body, pdf);
+            logger.info("Sent postponement email to {} for prijava id {}", to, existing.getIdPrijava());
+          } catch (MessagingException ex) {
+            logger.error("Failed to send postponement email for prijava id {} to {}", existing.getIdPrijava(), to, ex);
+          }
         }
+      } catch (Exception ex) {
+        logger.error("Failed to generate/send postponement notification for prijava id {}: {}", existing.getIdPrijava(), ex.getMessage(), ex);
       }
     }
 
