@@ -1,14 +1,22 @@
 package com.autoservis.interfaces.http.vozilo;
 
-import com.autoservis.services.VoziloService;
-import jakarta.validation.Valid;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.autoservis.services.VoziloService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/vehicles")
@@ -45,6 +53,21 @@ public class VoziloController {
     public ResponseEntity<?> delete(@PathVariable("id") Long id) {
         service.deleteById(id);
         return ResponseEntity.ok(new Message("Vozilo " + id + " je obrisano."));
+    }
+
+    // GET /api/vehicles/for/{osobaId} - samo administrator može dohvatiti vozila druge osobe
+    @GetMapping("/for/{osobaId}")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    public ResponseEntity<List<VehicleDto>> getForUser(@PathVariable("osobaId") Long osobaId) {
+        return ResponseEntity.ok(service.getForOsoba(osobaId));
+    }
+
+    // POST /api/vehicles/for/{osobaId} - administrator dodaje vozilo za određenog korisnika
+    @PostMapping("/for/{osobaId}")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    public ResponseEntity<VehicleDto> createForUser(@PathVariable("osobaId") Long osobaId, @Valid @RequestBody VehicleCreateDto body) {
+        var created = service.addForOsoba(osobaId, body);
+        return ResponseEntity.status(201).body(created);
     }
 
     // Helper metoda za dohvat id_osoba iz JWT tokena

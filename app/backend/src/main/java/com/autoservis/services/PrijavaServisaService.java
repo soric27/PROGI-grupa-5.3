@@ -98,6 +98,53 @@ public class PrijavaServisaService {
         prijave.save(novaPrijava);
     }
 
+    // Administrator: kreiraj prijavu za bilo kojeg korisnika (provjera vlasništva vozila)
+    @Transactional
+    public void createPrijavaForUser(PrijavaServisaCreateDto dto, Long idVlasnika) {
+        Vozilo vozilo = vozila.findById(dto.idVozilo())
+                .orElseThrow(() -> new IllegalArgumentException("Vozilo ne postoji."));
+
+        // Provjeri da vozilo pripada odabranoj osobi
+        if (!vozilo.getOsoba().getIdOsoba().equals(idVlasnika)) {
+            throw new IllegalArgumentException("Odabrano vozilo ne pripada navedenom korisniku.");
+        }
+
+        Serviser serviser = serviseri.findById(dto.idServiser())
+                .orElseThrow(() -> new IllegalArgumentException("Serviser ne postoji."));
+
+        Termin termin = termini.findById(dto.idTermin())
+                .orElseThrow(() -> new IllegalArgumentException("Termin ne postoji."));
+
+        if (termin.getServiser() == null || !termin.getServiser().getIdServiser().equals(dto.idServiser())) {
+            throw new IllegalArgumentException("Odabrani termin ne pripada odabranom serviseru.");
+        }
+
+        int updated = termini.markAsTaken(termin.getIdTermin());
+        if (updated == 0) {
+            throw new IllegalStateException("Odabrani termin je u međuvremenu zauzet.");
+        }
+
+        PrijavaServisa novaPrijava = new PrijavaServisa(
+                vozilo, serviser, termin, dto.napomenaVlasnika()
+        );
+        prijave.save(novaPrijava);
+    }
+
+    // Administrator: obriši prijavu i oslobodi termin
+    @Transactional
+    public void deletePrijavaAsAdmin(Long idPrijave) {
+        PrijavaServisa prijava = prijave.findById(idPrijave)
+                .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
+
+        Termin termin = prijava.getTermin();
+        if (termin != null) {
+            termin.setZauzet(false);
+            termini.save(termin);
+        }
+
+        prijave.deleteById(idPrijave);
+    }
+
     @Transactional(readOnly = true)
     public List<PrijavaDetalleDto> getPrijaveForKorisnik(Long idOsoba) {
         return prijave.findAll().stream()

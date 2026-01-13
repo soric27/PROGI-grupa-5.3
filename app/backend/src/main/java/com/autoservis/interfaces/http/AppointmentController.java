@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -145,6 +146,29 @@ public class AppointmentController {
 
         prijavaService.updateVlasnik(idPrijava, dto, idOsoba);
         return ResponseEntity.ok(Map.of("message", "Podaci vlasnika su ažurirani."));
+    }
+
+    // ADMIN: dohvat prijava za određenog korisnika
+    @GetMapping("/prijave/user")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    public ResponseEntity<?> getPrijaveForUser(@RequestParam Long userId) {
+        return ResponseEntity.ok(prijavaService.getPrijaveForKorisnik(userId));
+    }
+
+    // ADMIN: kreiraj prijavu za određenog korisnika
+    @PostMapping("/prijave/admin")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    public ResponseEntity<?> createPrijavaForUser(@Valid @RequestBody PrijavaServisaCreateDto dto, @RequestParam Long ownerId) {
+        prijavaService.createPrijavaForUser(dto, ownerId);
+        return ResponseEntity.status(201).body(Map.of("message", "Prijava kreirana."));
+    }
+
+    // ADMIN: obriši prijavu
+    @DeleteMapping("/prijave/{id}")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    public ResponseEntity<?> deletePrijavaAdmin(@PathVariable("id") Long id) {
+        prijavaService.deletePrijavaAsAdmin(id);
+        return ResponseEntity.ok(Map.of("message", "Prijava obrisana."));
     }
     
     // Dodaj napomenu na prijavu - samo za SERVISERE

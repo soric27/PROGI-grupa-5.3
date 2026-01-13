@@ -4,6 +4,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 function Vozila({ user }) {
   const [vozila, setVozila] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedUserForAdmin, setSelectedUserForAdmin] = useState("");
   const [marke, setMarke] = useState([]);
   const [modeli, setModeli] = useState([]);
   const [novoVozilo, setNovoVozilo] = useState({
@@ -17,12 +19,18 @@ function Vozila({ user }) {
   // vozila prijavljenog korisnika
   useEffect(() => {
     if (user) {
-      axios
-        .get("/api/vehicles", { withCredentials: true })
-        .then((res) => setVozila(res.data))
-        .catch((err) => console.error("Greška pri dohvaćanju vozila:", err));
+      if (user && user.uloga === 'administrator' && selectedUserForAdmin) {
+        axios.get(`/api/vehicles/for/${selectedUserForAdmin}`, { withCredentials: true })
+          .then((res) => setVozila(res.data))
+          .catch((err) => console.error("Greška pri dohvaćanju vozila:", err));
+      } else {
+        axios
+          .get("/api/vehicles", { withCredentials: true })
+          .then((res) => setVozila(res.data))
+          .catch((err) => console.error("Greška pri dohvaćanju vozila:", err));
+      }
     }
-  }, [user]);
+  }, [user, selectedUserForAdmin]);
 
   // marke automobila
   useEffect(() => {
@@ -30,7 +38,11 @@ function Vozila({ user }) {
       .get("/api/marke")
       .then((res) => setMarke(res.data))
       .catch((err) => console.error("Greška pri dohvaćanju marki:", err));
-  }, []);
+
+    if (user && user.uloga === 'administrator') {
+      axios.get('/api/users').then(r => setUsers(r.data)).catch(err => console.error('Greška pri dohvatu korisnika', err));
+    }
+  }, [user]);
 
   // modeli odredjene marke
   useEffect(() => {
@@ -71,22 +83,31 @@ const handleSubmit = async (e) => {
 });
 
   try {
-    await axios.post(
-      
-      
-      "/api/vehicles",
-      {
+    if (user && user.uloga === 'administrator' && selectedUserForAdmin) {
+      await axios.post(`/api/vehicles/for/${selectedUserForAdmin}`, {
         id_model: Number(novoVozilo.id_model),
         registracija: novoVozilo.registracija,
         godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
-      },
-      { withCredentials: true }
-    );
+      }, { withCredentials: true });
 
-    const response = await axios.get("/api/vehicles", {
-      withCredentials: true,
-    });
-    setVozila(response.data);
+      const response = await axios.get(`/api/vehicles/for/${selectedUserForAdmin}`, { withCredentials: true });
+      setVozila(response.data);
+    } else {
+      await axios.post(
+        "/api/vehicles",
+        {
+          id_model: Number(novoVozilo.id_model),
+          registracija: novoVozilo.registracija,
+          godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
+        },
+        { withCredentials: true }
+      );
+
+      const response = await axios.get("/api/vehicles", {
+        withCredentials: true,
+      });
+      setVozila(response.data);
+    }
 
     setNovoVozilo({
       id_marka: "",
@@ -118,6 +139,16 @@ const handleSubmit = async (e) => {
       >
         {showForm ? "Zatvori unos" : "Dodaj vozilo"}
       </button>
+
+      {user && user.uloga === 'administrator' && (
+        <div className="mb-3">
+          <label className="form-label">Odaberite korisnika</label>
+          <select className="form-select" value={selectedUserForAdmin} onChange={e=>setSelectedUserForAdmin(e.target.value)}>
+            <option value="">-- odaberite korisnika --</option>
+            {users.map(u => <option key={u.idOsoba} value={u.idOsoba}>{u.imePrezime} ({u.email})</option>)}
+          </select>
+        </div>
+      )}
 
       {showForm && (
         <div className="card p-4 mb-4 shadow-sm">
@@ -210,6 +241,22 @@ const handleSubmit = async (e) => {
                 <td>{v.model_naziv}</td>
                 <td>{v.registracija}</td>
                 <td>{v.godina_proizvodnje}</td>
+                {user && user.uloga === 'administrator' && (
+                  <td><button className="btn btn-sm btn-danger" onClick={async ()=>{
+                    if (!window.confirm('Obrisati ovo vozilo?')) return;
+                    try {
+                      await axios.delete(`/api/vehicles/${v.id_vozilo}`);
+                      // refresh list
+                      if (selectedUserForAdmin) {
+                        const r = await axios.get(`/api/vehicles/for/${selectedUserForAdmin}`);
+                        setVozila(r.data);
+                      } else {
+                        const r = await axios.get('/api/vehicles');
+                        setVozila(r.data);
+                      }
+                    } catch (err) { console.error(err); alert('Greška pri brisanju vozila'); }
+                  }}>Obriši</button></td>
+                )}
               </tr>
             ))}
           </tbody>

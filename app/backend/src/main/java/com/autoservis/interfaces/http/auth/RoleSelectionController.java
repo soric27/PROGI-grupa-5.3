@@ -24,13 +24,15 @@ public class RoleSelectionController {
 
     private final OsobaRepository osobaRepository;
     private final ServiserRepository serviserRepository;
+    private final com.autoservis.repositories.TerminRepository terminRepository;
     private final JwtTokenProvider jwtProvider;
 
     private final Logger log = LoggerFactory.getLogger(RoleSelectionController.class);
 
-    public RoleSelectionController(OsobaRepository osobaRepository, ServiserRepository serviserRepository, JwtTokenProvider jwtProvider) {
+    public RoleSelectionController(OsobaRepository osobaRepository, ServiserRepository serviserRepository, com.autoservis.repositories.TerminRepository terminRepository, JwtTokenProvider jwtProvider) {
         this.osobaRepository = osobaRepository;
         this.serviserRepository = serviserRepository;
+        this.terminRepository = terminRepository;
         this.jwtProvider = jwtProvider;
     }
 
@@ -88,13 +90,28 @@ public class RoleSelectionController {
         }
         final Osoba savedOsoba = osoba; // ensure effectively final for lambda
 
-        // Ako je odabrana uloga "serviser", osiguraj da postoji zapis u tablici serviser
+        // Ako je odabrana uloga "serviser", osiguraj da postoji zapis u tablici serviser i generiraj termine ako ih nema
         if ("serviser".equals(novaUloga)) {
             try {
-                serviserRepository.findByOsoba_IdOsoba(idOsoba).orElseGet(() -> {
-                    Serviser s = new Serviser(savedOsoba, false);
-                    return serviserRepository.save(s);
+                Serviser s = serviserRepository.findByOsoba_IdOsoba(idOsoba).orElseGet(() -> {
+                    Serviser svc = new Serviser(savedOsoba, false);
+                    return serviserRepository.save(svc);
                 });
+
+                // Ako serviser nema termine, dodaj osnovne termine (npr. sljedećih 7 dana, 9:00-16:00)
+                var existing = terminRepository.findByServiser_IdServiser(s.getIdServiser());
+                if (existing == null || existing.isEmpty()) {
+                    java.time.LocalDate today = java.time.LocalDate.now();
+                    java.util.List<com.autoservis.models.Termin> slots = new java.util.ArrayList<>();
+                    for (int d = 0; d < 7; d++) {
+                        for (int h = 9; h < 17; h++) {
+                            java.time.LocalDateTime dt = today.plusDays(d).atTime(h, 0);
+                            slots.add(new com.autoservis.models.Termin(dt, s));
+                        }
+                    }
+                    terminRepository.saveAll(slots);
+                }
+
             } catch (Exception ex) {
                 log.error("Neuspjelo kreiranje serviser-a za id {}: {}", idOsoba, ex.toString());
                 return ResponseEntity.status(500).body(new ErrorResponse("Pogreška pri stvaranju servisera. Kontaktirajte administratora."));

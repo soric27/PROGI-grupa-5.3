@@ -8,6 +8,8 @@ function Appointments({ user }) {
   const [mojePrijave, setMojePrijave] = useState([]);
   const [dodijeljene, setDodijeljene] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [users, setUsers] = useState([]); // za admina: lista korisnika
+  const [selectedUserForAdmin, setSelectedUserForAdmin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,6 +38,11 @@ function Appointments({ user }) {
     // fetch my vehicles so user can pick which vehicle to service
     axios.get("/api/vehicles").then(r => setVehicles(r.data)).catch(e => console.error(e));
 
+    // ako je admin, dohvati listu korisnika za upravljanje
+    if (user && user.uloga === "administrator") {
+      axios.get('/api/users').then(r => setUsers(r.data)).catch(e => console.error(e));
+    }
+
     // if serviser, fetch dodijeljene
     if (user && (user.uloga === "serviser" || user.uloga === "administrator")) {
       axios.get("/api/appointments/prijave/dodijeljene").then(r => setDodijeljene(r.data)).catch(e => console.error(e));
@@ -55,6 +62,12 @@ function Appointments({ user }) {
       // if no serviser selected, clear or fetch all
       setTermini([]);
     }
+
+    // ako je admin i izabran je korisnik za upravljanje, dohvati njegove vozila i prijave
+    if (user && user.uloga === 'administrator' && selectedUserForAdmin) {
+      axios.get(`/api/vehicles/for/${selectedUserForAdmin}`).then(r => setVehicles(r.data)).catch(e => console.error(e));
+      axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`).then(r => setMojePrijave(r.data)).catch(e => console.error(e));
+    }
   }, [selectedServiser, user]);
 
   const handleBook = async (e) => {
@@ -63,18 +76,32 @@ function Appointments({ user }) {
     setLoading(true); setError(""); setMessage("");
 
     try {
-      await axios.post("/api/appointments/prijave", {
-        idVozilo: Number(idVozilo),
-        idServiser: Number(selectedServiser),
-        idTermin: Number(selectedTermin),
-        napomenaVlasnika: napomena || null
-      });
+      if (user.uloga === 'administrator' && selectedUserForAdmin) {
+        // create on behalf of selected user
+        await axios.post(`/api/appointments/prijave/admin?ownerId=${selectedUserForAdmin}`, {
+          idVozilo: Number(idVozilo),
+          idServiser: Number(selectedServiser),
+          idTermin: Number(selectedTermin),
+          napomenaVlasnika: napomena || null
+        });
+        setMessage("Prijava kreirana za odabranog korisnika.");
+        // refresh admin view of that user's prijave
+        const r = await axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`);
+        setMojePrijave(r.data);
+      } else {
+        await axios.post("/api/appointments/prijave", {
+          idVozilo: Number(idVozilo),
+          idServiser: Number(selectedServiser),
+          idTermin: Number(selectedTermin),
+          napomenaVlasnika: napomena || null
+        });
 
-      setMessage("Prijava poslana.");
-      setIdVozilo(""); setSelectedServiser(""); setSelectedTermin(""); setNapomena("");
-      // refresh my prijave
-      const r = await axios.get("/api/appointments/prijave/moje");
-      setMojePrijave(r.data);
+        setMessage("Prijava poslana.");
+        setIdVozilo(""); setSelectedServiser(""); setSelectedTermin(""); setNapomena("");
+        // refresh my prijave
+        const r = await axios.get("/api/appointments/prijave/moje");
+        setMojePrijave(r.data);
+      }
     } catch (err) {
       console.error(err);
       setError(err?.response?.data?.message || "Greška pri slanju prijave.");
@@ -141,6 +168,16 @@ function Appointments({ user }) {
                   }}>Seed test data</button>
                 </div>
               )}
+
+              {user && user.uloga === 'administrator' && (
+                <div className="mb-3">
+                  <label className="form-label">Odaberite korisnika (admin)</label>
+                  <select className="form-select" value={selectedUserForAdmin} onChange={e=>setSelectedUserForAdmin(e.target.value)}>
+                    <option value="">-- odaberite korisnika --</option>
+                    {users.map(u => <option key={u.idOsoba} value={u.idOsoba}>{u.imePrezime} ({u.email})</option>)}
+                  </select>
+                </div>
+              )}
               <form onSubmit={handleBook}>
                 <div className="mb-3">
                   <label className="form-label">Odaberite vozilo</label>
@@ -182,11 +219,31 @@ function Appointments({ user }) {
               {mojePrijave.length === 0 && <div className="text-muted">Nema prijava</div>}
               <ul className="list-group mt-2">
                 {mojePrijave.map(p => (
-                  <li className="list-group-item" key={p.idPrijava}>
-                    <div><strong>Status:</strong> {p.status}</div>
-                    <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
-                    <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
-                    <div><strong>Serviser:</strong> {p.serviserIme}</div>
+                  <li className="list-group-item d-flex justify-content-between align-items-start" key={p.idPrijava}>
+                    <div>
+                      <div><strong>Status:</strong> {p.status}</div>
+                      <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
+                      <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
+                      <div><strong>Serviser:</strong> {p.serviserIme}</div>
+                    </div>
+                    <div>
+                      {user && user.uloga === 'administrator' ? (
+                        <button className="btn btn-sm btn-danger" onClick={async ()=>{
+                          if (!window.confirm('Obrisati ovu prijavu?')) return;
+                          try {
+                            await axios.delete(`/api/appointments/prijave/${p.idPrijava}`);
+                            // refresh list
+                            const r = await axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`);
+                            setMojePrijave(r.data);
+                          } catch (err) {
+                            console.error(err);
+                            alert('Greška pri brisanju prijave');
+                          }
+                        }}>Obriši</button>
+                      ) : (
+                        <></>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
