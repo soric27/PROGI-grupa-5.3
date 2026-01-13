@@ -19,6 +19,13 @@ function Appointments({ user }) {
   const [selectedTermin, setSelectedTermin] = useState("");
   const [napomena, setNapomena] = useState("");
 
+  // replacement vehicle request
+  const [zamjenaRequested, setZamjenaRequested] = useState(false);
+  const [zamjenaOd, setZamjenaOd] = useState(""); // YYYY-MM-DD
+  const [zamjenaDo, setZamjenaDo] = useState("");
+  const [availableZamjene, setAvailableZamjene] = useState([]);
+  const [selectedZamjenaId, setSelectedZamjenaId] = useState("");
+
   // edit owner modal
   const [editing, setEditing] = useState(null); // { idPrijava, ime, prezime, email }
   const [message, setMessage] = useState("");
@@ -74,12 +81,24 @@ function Appointments({ user }) {
       setTermini([]);
     }
 
+    // fetch available replacement vehicles when user chooses a date range
+    if (zamjenaOd && zamjenaDo) {
+      axios.get(`/api/zamjene?from=${zamjenaOd}&to=${zamjenaDo}`).then(r => setAvailableZamjene(r.data)).catch(e => console.error(e));
+    } else {
+      setAvailableZamjene([]);
+    }
+
     // ako je admin i izabran je korisnik za upravljanje, dohvati njegove vozila i prijave
     if (user && user.uloga === 'administrator' && selectedUserForAdmin) {
       axios.get(`/api/vehicles/for/${selectedUserForAdmin}`).then(r => setVehicles(r.data)).catch(e => console.error(e));
       axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`).then(r => setMojePrijave(r.data)).catch(e => console.error(e));
     }
-  }, [selectedServiser, user]);
+    // re-fetch available zamjene if user changed date fields while admin switched context
+    if (zamjenaOd && zamjenaDo) {
+      axios.get(`/api/zamjene?from=${zamjenaOd}&to=${zamjenaDo}`).then(r => setAvailableZamjene(r.data)).catch(e => console.error(e));
+    } else {
+      setAvailableZamjene([]);
+    }  }, [selectedServiser, user, zamjenaOd, zamjenaDo]);
 
   // Poll 'moje prijave' for korisnik every 10s so serviser notes appear without manual refresh
   useEffect(() => {
@@ -107,25 +126,35 @@ function Appointments({ user }) {
           idVozilo: Number(idVozilo),
           idServiser: Number(selectedServiser),
           idTermin: Number(selectedTermin),
-          napomenaVlasnika: napomena || null
+          napomenaVlasnika: napomena || null,
+          idZamjena: selectedZamjenaId ? Number(selectedZamjenaId) : null,
+          datumOd: zamjenaOd || null,
+          datumDo: zamjenaDo || null
         });
         setMessage("Prijava kreirana za odabranog korisnika.");
         // refresh admin view of that user's prijave
         const r = await axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`);
         setMojePrijave(r.data);
+        // reset zamjena inputs
+        setZamjenaRequested(false); setZamjenaOd(''); setZamjenaDo(''); setSelectedZamjenaId(''); setAvailableZamjene([]);
       } else {
         await axios.post("/api/appointments/prijave", {
           idVozilo: Number(idVozilo),
           idServiser: Number(selectedServiser),
           idTermin: Number(selectedTermin),
-          napomenaVlasnika: napomena || null
+          napomenaVlasnika: napomena || null,
+          idZamjena: selectedZamjenaId ? Number(selectedZamjenaId) : null,
+          datumOd: zamjenaOd || null,
+          datumDo: zamjenaDo || null
         });
 
         setMessage("Prijava poslana.");
         setIdVozilo(""); setSelectedServiser(""); setSelectedTermin(""); setNapomena("");
-        // refresh my prijave
+            // refresh my prijave
         const r = await axios.get("/api/appointments/prijave/moje");
         setMojePrijave(r.data);
+        // reset zamjena inputs
+        setZamjenaRequested(false); setZamjenaOd(''); setZamjenaDo(''); setSelectedZamjenaId(''); setAvailableZamjene([]);
       }
     } catch (err) {
       console.error(err);
@@ -354,6 +383,37 @@ function Appointments({ user }) {
                     </select>
                   </div>
 
+                  <div className="mb-3 form-check">
+                    <input className="form-check-input" type="checkbox" id="zamjenaCheck" checked={zamjenaRequested} onChange={e => {
+                      const checked = e.target.checked;
+                      setZamjenaRequested(checked);
+                      if (!checked) { setZamjenaOd(''); setZamjenaDo(''); setAvailableZamjene([]); setSelectedZamjenaId(''); }
+                    }} />
+                    <label className="form-check-label" htmlFor="zamjenaCheck">Tražim zamjensko vozilo</label>
+                  </div>
+
+                  {zamjenaRequested && (
+                    <div className="border rounded p-3 mb-3">
+                      <div className="row g-2">
+                        <div className="col-md-4">
+                          <label className="form-label">Datum od</label>
+                          <input type="date" className="form-control" value={zamjenaOd} onChange={e => setZamjenaOd(e.target.value)} />
+                        </div>
+                        <div className="col-md-4">
+                          <label className="form-label">Datum do</label>
+                          <input type="date" className="form-control" value={zamjenaDo} onChange={e => setZamjenaDo(e.target.value)} />
+                        </div>
+                        <div className="col-md-4">
+                          <label className="form-label">Odaberite zamjensko vozilo</label>
+                          <select className="form-select" value={selectedZamjenaId} onChange={e => setSelectedZamjenaId(e.target.value)}>
+                            <option value="">-- odaberite zamjensko vozilo --</option>
+                            {availableZamjene.map(z => <option key={z.id_zamjena} value={z.id_zamjena}>{z.registracija} ({z.model?.naziv || ''})</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="mb-3">
                     <label className="form-label">Napomena</label>
                     <textarea className="form-control" value={napomena} onChange={e=>setNapomena(e.target.value)} rows={3}></textarea>
@@ -381,6 +441,7 @@ function Appointments({ user }) {
                         <div><strong>Serviser:</strong> {p.serviserIme}</div>
                         <div className="mt-2"><strong>Napomena vlasnika:</strong> {p.napomenaVlasnika || <span className="text-muted">-</span>}</div>
                         <div><strong>Napomena servisera:</strong> {p.napomeneServisera && p.napomeneServisera.length ? p.napomeneServisera[0].opis : <span className="text-muted">-</span>}</div>
+                        <div className="mt-1"><strong>Zamjensko vozilo:</strong> {p.rezervacijaZamjene ? `${p.rezervacijaZamjene.registracija} (${p.rezervacijaZamjene.datumOd} — ${p.rezervacijaZamjene.datumDo})` : <span className="text-muted">-</span>}</div>
                       </div>
                       <div>
                         {user && (
@@ -425,6 +486,7 @@ function Appointments({ user }) {
                         <div><strong>Status:</strong> {p.status}</div>
                         <div className="mt-2"><strong>Napomena vlasnika:</strong> {p.napomenaVlasnika || <span className="text-muted">-</span>}</div>
                         <div><strong>Napomena servisera:</strong> {p.napomeneServisera && p.napomeneServisera.length ? p.napomeneServisera[0].opis : <span className="text-muted">-</span>}</div>
+                        <div className="mt-1"><strong>Zamjensko vozilo:</strong> {p.rezervacijaZamjene ? `${p.rezervacijaZamjene.registracija} (${p.rezervacijaZamjene.datumOd} — ${p.rezervacijaZamjene.datumDo})` : <span className="text-muted">-</span>}</div>
                       </div>
                       <div className="d-flex gap-2">
                         {/* Serviser can postpone term, change status, add note */}

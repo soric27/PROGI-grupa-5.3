@@ -1,16 +1,22 @@
 package com.autoservis.shared;
 
 import java.util.Comparator;
-import java.util.stream.Collectors;  // ← PROMIJENI
+import java.util.stream.Collectors;
 
 import com.autoservis.interfaces.dto.NapomenaDto;
 import com.autoservis.interfaces.dto.PrijavaDetalleDto;
+import com.autoservis.interfaces.dto.RezervacijaZamjeneDto;
 import com.autoservis.models.NapomenaServisera;
 import com.autoservis.models.PrijavaServisa;
+import com.autoservis.models.RezervacijaZamjene;
 
 public class PrijavaServisaMapper {
 
-    public static PrijavaDetalleDto toDetailDto(PrijavaServisa p) {  // ← PROMIJENI
+    public static PrijavaDetalleDto toDetailDto(PrijavaServisa p) {
+        return toDetailDto(p, null);
+    }
+
+    public static PrijavaDetalleDto toDetailDto(PrijavaServisa p, RezervacijaZamjene rez) {
         var vozilo = p.getVozilo();
         var vlasnik = vozilo.getOsoba();
         var serviser = p.getServiser().getOsoba();
@@ -30,7 +36,18 @@ public class PrijavaServisaMapper {
                 .map(n -> new NapomenaDto(n.getIdNapomena(), n.getDatum(), n.getOpis()))
                 .collect(Collectors.toList());
 
-        return new PrijavaDetalleDto(  // ← PROMIJENI
+        RezervacijaZamjeneDto rezDto = null;
+        if (rez != null) {
+            rezDto = new RezervacijaZamjeneDto(
+                rez.getIdRezervacija(),
+                rez.getZamjena().getIdZamjena(),
+                rez.getZamjena().getRegistracija(),
+                rez.getDatumOd(),
+                rez.getDatumDo()
+            );
+        }
+
+        return new PrijavaDetalleDto(
                 p.getIdPrijava(),
                 p.getStatus(),
                 p.getTermin().getDatumVrijeme(),
@@ -40,7 +57,8 @@ public class PrijavaServisaMapper {
                 vlasnikInfo,
                 serviserIme,
                 p.getNapomenaVlasnika(),
-                napomeneDto
+                napomeneDto,
+                rezDto
         );
     }
 }

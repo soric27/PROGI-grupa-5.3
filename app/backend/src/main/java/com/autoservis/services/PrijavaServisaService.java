@@ -32,14 +32,16 @@ public class PrijavaServisaService {
     private final TerminRepository termini;
     private final NapomenaServiseraRepository napomeneRepo;
     private final OsobaRepository osobeRepo;
+    private final ZamjenaService zamjenaService;
 
-    public PrijavaServisaService(PrijavaServisaRepository prijave, VoziloRepository vozila, ServiserRepository serviseri, TerminRepository termini, NapomenaServiseraRepository n, OsobaRepository osobeRepo) {
+    public PrijavaServisaService(PrijavaServisaRepository prijave, VoziloRepository vozila, ServiserRepository serviseri, TerminRepository termini, NapomenaServiseraRepository n, OsobaRepository osobeRepo, ZamjenaService zamjenaService) {
         this.prijave = prijave;
         this.vozila = vozila;
         this.serviseri = serviseri;
         this.termini = termini;
         this.napomeneRepo = n;
         this.osobeRepo = osobeRepo;
+        this.zamjenaService = zamjenaService;
     }
 
     @Transactional
@@ -58,7 +60,7 @@ public class PrijavaServisaService {
     }
 
     @Transactional
-    public void createPrijava(PrijavaServisaCreateDto dto, Long idVlasnika) {
+    public com.autoservis.interfaces.dto.PrijavaDetalleDto createPrijava(PrijavaServisaCreateDto dto, Long idVlasnika) {
         Vozilo vozilo = vozila.findById(dto.idVozilo())
                 .orElseThrow(() -> new IllegalArgumentException("Vozilo ne postoji."));
 
@@ -89,11 +91,19 @@ public class PrijavaServisaService {
                 vozilo, serviser, termin, dto.napomenaVlasnika()
         );
         prijave.save(novaPrijava);
+
+        // If user requested a replacement vehicle at creation, try to reserve it
+        com.autoservis.models.RezervacijaZamjene rez = null;
+        if (dto.idZamjena() != null && dto.datumOd() != null && dto.datumDo() != null) {
+            rez = zamjenaService.reserve(novaPrijava.getIdPrijava(), dto.idZamjena(), dto.datumOd(), dto.datumDo());
+        }
+
+        return com.autoservis.shared.PrijavaServisaMapper.toDetailDto(novaPrijava, rez);
     }
 
     // Administrator: kreiraj prijavu za bilo kojeg korisnika (provjera vlasništva vozila)
     @Transactional
-    public void createPrijavaForUser(PrijavaServisaCreateDto dto, Long idVlasnika) {
+    public com.autoservis.interfaces.dto.PrijavaDetalleDto createPrijavaForUser(PrijavaServisaCreateDto dto, Long idVlasnika) {
         Vozilo vozilo = vozila.findById(dto.idVozilo())
                 .orElseThrow(() -> new IllegalArgumentException("Vozilo ne postoji."));
 
@@ -121,6 +131,13 @@ public class PrijavaServisaService {
                 vozilo, serviser, termin, dto.napomenaVlasnika()
         );
         prijave.save(novaPrijava);
+
+        com.autoservis.models.RezervacijaZamjene rez = null;
+        if (dto.idZamjena() != null && dto.datumOd() != null && dto.datumDo() != null) {
+            rez = zamjenaService.reserve(novaPrijava.getIdPrijava(), dto.idZamjena(), dto.datumOd(), dto.datumDo());
+        }
+
+        return com.autoservis.shared.PrijavaServisaMapper.toDetailDto(novaPrijava, rez);
     }
 
     // Administrator: obriši prijavu i oslobodi termin
@@ -162,7 +179,11 @@ public class PrijavaServisaService {
     public List<PrijavaDetalleDto> getPrijaveForKorisnik(Long idOsoba) {
         return prijave.findAll().stream()
                 .filter(p -> p.getVozilo().getOsoba().getIdOsoba().equals(idOsoba))
-                .map(PrijavaServisaMapper::toDetailDto)
+                .map(p -> {
+                    var rezList = zamjenaService.getReservationsForPrijava(p.getIdPrijava());
+                    var latest = rezList.isEmpty() ? null : rezList.get(rezList.size()-1);
+                    return PrijavaServisaMapper.toDetailDto(p, latest);
+                })
                 .toList();
     }
 
@@ -172,7 +193,11 @@ public class PrijavaServisaService {
         return serviseri.findByOsoba_IdOsoba(idOsoba)
                 .map(serviser -> prijave.findAll().stream()
                         .filter(p -> p.getServiser().getIdServiser().equals(serviser.getIdServiser()))
-                        .map(PrijavaServisaMapper::toDetailDto)
+                        .map(p -> {
+                            var rezList = zamjenaService.getReservationsForPrijava(p.getIdPrijava());
+                            var latest = rezList.isEmpty() ? null : rezList.get(rezList.size()-1);
+                            return PrijavaServisaMapper.toDetailDto(p, latest);
+                        })
                         .toList()
                 )
                 .orElse(java.util.List.of());

@@ -72,9 +72,9 @@ public class AppointmentController {
             return ResponseEntity.status(401).body(Map.of("message", "Nevažeći token."));
         }
         
-        prijavaService.createPrijava(dto, idVlasnika);
+        var created = prijavaService.createPrijava(dto, idVlasnika);
         
-        return ResponseEntity.status(201).body(Map.of("message", "Prijava za servis je uspješno kreirana."));
+        return ResponseEntity.status(201).body(created);
     }
 
     // Dohvati sve prijave za prijavljenog KORISNIKA
@@ -159,8 +159,8 @@ public class AppointmentController {
     @PostMapping("/prijave/admin")
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<?> createPrijavaForUser(@Valid @RequestBody PrijavaServisaCreateDto dto, @RequestParam Long ownerId) {
-        prijavaService.createPrijavaForUser(dto, ownerId);
-        return ResponseEntity.status(201).body(Map.of("message", "Prijava kreirana."));
+        var created = prijavaService.createPrijavaForUser(dto, ownerId);
+        return ResponseEntity.status(201).body(created);
     }
 
     // Delete prijava - owner (korisnik) or administrator

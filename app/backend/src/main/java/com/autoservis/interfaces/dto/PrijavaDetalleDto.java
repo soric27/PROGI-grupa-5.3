@@ -13,5 +13,6 @@ public record PrijavaDetalleDto(
     String vlasnikInfo, // "Pero Perić, pero@email.com"
     String serviserIme,
     String napomenaVlasnika,
-    List<NapomenaDto> napomeneServisera
+    List<NapomenaDto> napomeneServisera,
+    RezervacijaZamjeneDto rezervacijaZamjene
 ) {}
