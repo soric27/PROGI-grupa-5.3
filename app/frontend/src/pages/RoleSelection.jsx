@@ -84,7 +84,7 @@ function RoleSelection() {
         </div>
 
         <p className="text-center text-muted mt-4 small">
-          Ova ulogu možete promijeniti kasnije u postavkama.
+          Ovu ulogu možete promijeniti kasnije.
         </p>
       </div>
     </div>

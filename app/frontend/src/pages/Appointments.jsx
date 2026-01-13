@@ -40,12 +40,16 @@ function Appointments({ user }) {
 
     // ako je admin, dohvati listu korisnika za upravljanje
     if (user && user.uloga === "administrator") {
-      axios.get('/api/users').then(r => setUsers(r.data)).catch(e => console.error(e));
+      axios.get('/api/users')
+        .then(r => setUsers(r.data))
+        .catch(e => { console.error(e); setError('Greška pri dohvatu korisnika: ' + (e?.response?.data?.message || e.message)); });
     }
 
     // if serviser, fetch dodijeljene
     if (user && (user.uloga === "serviser" || user.uloga === "administrator")) {
-      axios.get("/api/appointments/prijave/dodijeljene").then(r => setDodijeljene(r.data)).catch(e => console.error(e));
+      axios.get("/api/appointments/prijave/dodijeljene")
+        .then(r => setDodijeljene(r.data))
+        .catch(e => { console.error(e); setError('Greška pri dohvatu dodijeljenih prijava: ' + (e?.response?.data?.message || e.message)); });
     }
   }, [user]);
 

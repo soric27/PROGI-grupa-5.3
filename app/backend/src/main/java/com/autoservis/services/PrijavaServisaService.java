@@ -155,13 +155,14 @@ public class PrijavaServisaService {
 
     @Transactional(readOnly = true)
     public List<PrijavaDetalleDto> getPrijaveForServiser(Long idOsoba) {
-        Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsoba)
-                .orElseThrow(() -> new AccessDeniedException("Osoba nije serviser."));
-        
-        return prijave.findAll().stream()
-                .filter(p -> p.getServiser().getIdServiser().equals(serviser.getIdServiser()))
-                .map(PrijavaServisaMapper::toDetailDto)
-                .toList();
+        // If the person is not registered as a serviser in DB, return empty list (caller may still be allowed by role)
+        return serviseri.findByOsoba_IdOsoba(idOsoba)
+                .map(serviser -> prijave.findAll().stream()
+                        .filter(p -> p.getServiser().getIdServiser().equals(serviser.getIdServiser()))
+                        .map(PrijavaServisaMapper::toDetailDto)
+                        .toList()
+                )
+                .orElse(java.util.List.of());
     }
 
     @Transactional
