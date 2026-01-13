@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autoservis.models.Osoba;
+import com.autoservis.models.Serviser;
 import com.autoservis.repositories.OsobaRepository;
+import com.autoservis.repositories.ServiserRepository;
 import com.autoservis.security.JwtTokenProvider;
 
 import jakarta.validation.constraints.NotBlank;
@@ -19,10 +21,12 @@ import jakarta.validation.constraints.NotBlank;
 public class RoleSelectionController {
 
     private final OsobaRepository osobaRepository;
+    private final ServiserRepository serviserRepository;
     private final JwtTokenProvider jwtProvider;
 
-    public RoleSelectionController(OsobaRepository osobaRepository, JwtTokenProvider jwtProvider) {
+    public RoleSelectionController(OsobaRepository osobaRepository, ServiserRepository serviserRepository, JwtTokenProvider jwtProvider) {
         this.osobaRepository = osobaRepository;
+        this.serviserRepository = serviserRepository;
         this.jwtProvider = jwtProvider;
     }
 
@@ -54,6 +58,14 @@ public class RoleSelectionController {
         // Ažuriraj ulogu (ažuriramo postojeću osobu, ne kreiramo novu)
         osoba.setUloga(novaUloga);
         osoba = osobaRepository.save(osoba);
+
+        // Ako je odabrana uloga "serviser", osiguraj da postoji zapis u tablici serviser
+        if ("serviser".equals(novaUloga)) {
+            serviserRepository.findByOsoba_IdOsoba(idOsoba).orElseGet(() -> {
+                Serviser s = new Serviser(osoba, false);
+                return serviserRepository.save(s);
+            });
+        }
 
         // Generiraj novi token sa novom ulogom
         String noviToken = jwtProvider.generateToken(osoba);
