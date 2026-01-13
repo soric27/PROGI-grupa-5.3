@@ -19,6 +19,9 @@ public interface TerminRepository extends JpaRepository<Termin, Long> {
     // find termini for serviser (any status)
     List<Termin> findByServiser_IdServiser(Long serviserId);
 
+    // find by datetime + serviser
+    java.util.Optional<Termin> findByDatumVrijemeAndServiser_IdServiser(java.time.LocalDateTime datumVrijeme, Long serviserId);
+
     // Atomic mark-as-taken update (returns number of rows updated)
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.data.jpa.repository.Query("UPDATE Termin t SET t.zauzet = true WHERE t.idTermin = :id AND t.zauzet = false")

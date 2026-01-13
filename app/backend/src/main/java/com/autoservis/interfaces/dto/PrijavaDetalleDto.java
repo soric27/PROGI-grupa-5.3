@@ -11,6 +11,7 @@ public record PrijavaDetalleDto(
     Long idVlasnik,
     String voziloInfo, // "Audi A4 (ZG-1234-AB)"
     String vlasnikInfo, // "Pero Perić, pero@email.com"
+    Long idServiser,
     String serviserIme,
     String napomenaVlasnika,
     List<NapomenaDto> napomeneServisera,

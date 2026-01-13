@@ -189,11 +189,21 @@ function Appointments({ user }) {
   };
 
   // Serviser: edit termin
-  const openEditTermin = (p) => {
+  const openEditTermin = async (p) => {
     const dt = p.datumTermina ? new Date(p.datumTermina) : null;
     const localVal = dt ? dt.toISOString().slice(0,16) : '';
-    setEditTerminModal({ idPrijava: p.idPrijava, newDatum: localVal });
+    const modal = { idPrijava: p.idPrijava, newDatum: localVal, available: [], selectedSlot: '' };
     setMessage(""); setError("");
+    try {
+      // if the DTO includes serviser id, fetch that serviser's free slots and show them as options
+      if (p.idServiser) {
+        const r = await axios.get(`/api/appointments/termini?serviserId=${p.idServiser}`);
+        modal.available = r.data;
+      }
+    } catch (e) {
+      console.error('Ne mogu dohvatiti termine servisa', e);
+    }
+    setEditTerminModal(modal);
   };
 
   const handleEditTerminSave = async () => {
@@ -705,7 +715,16 @@ function Appointments({ user }) {
                 {error && <div className="alert alert-danger">{error}</div>}
                 <div className="mb-3">
                   <label className="form-label">Novi termin</label>
-                  <input type="datetime-local" className="form-control" value={editTerminModal.newDatum} onChange={e=>setEditTerminModal({...editTerminModal, newDatum: e.target.value})} />
+                  { (editTerminModal.available && editTerminModal.available.length>0) && (
+                    <select className="form-select mb-2" value={editTerminModal.selectedSlot || ''} onChange={e=>{
+                      const val = e.target.value; // ISO datetime
+                      setEditTerminModal({...editTerminModal, selectedSlot: val, newDatum: val ? val.slice(0,16) : ''});
+                    }}>
+                      <option value="">-- odaberite slobodan termin --</option>
+                      {editTerminModal.available.map(t => <option key={t.idTermin} value={t.datumVrijeme}>{new Date(t.datumVrijeme).toLocaleString()}</option>)}
+                    </select>
+                  )}
+                  <input type="datetime-local" className="form-control" value={editTerminModal.newDatum} onChange={e=>setEditTerminModal({...editTerminModal, newDatum: e.target.value, selectedSlot: ''})} />
                 </div>
               </div>
               <div className="modal-footer">

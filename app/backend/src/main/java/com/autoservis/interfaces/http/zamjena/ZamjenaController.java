@@ -8,6 +8,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,11 +28,61 @@ public class ZamjenaController {
   @Autowired
   private ZamjenaService zamjenaService;
 
+  @Autowired
+  private com.autoservis.repositories.ZamjenaVoziloRepository zamjenaRepo;
+
+  @Autowired
+  private com.autoservis.repositories.ModelRepository modelRepo;
+
   @GetMapping
   public ResponseEntity<?> listAvailable(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
     List<ZamjenaVozilo> list = zamjenaService.listAvailable(from, to);
     return ResponseEntity.ok(list);
+  }
+
+  // Admin: list all replacement vehicles (including unavailable)
+  @GetMapping("/all")
+  public ResponseEntity<?> listAll(@AuthenticationPrincipal Jwt jwt) {
+    if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
+    boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+    if (!isAdmin) return ResponseEntity.status(403).body("Samo administrator može vidjeti sve zamjenske liste.");
+    return ResponseEntity.ok(zamjenaService.listAll());
+  }
+
+  public static class CreateZamjenaDto {
+    public Long idModel;
+    public String registracija;
+    public Boolean dostupno;
+  }
+
+  @PostMapping
+  public ResponseEntity<?> createZamjena(@RequestBody CreateZamjenaDto dto, @AuthenticationPrincipal Jwt jwt) {
+    if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
+    boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+    if (!isAdmin) return ResponseEntity.status(403).body("Samo administrator može dodavati zamjenska vozila.");
+    try {
+      com.autoservis.models.Model m = modelRepo.findById(dto.idModel).orElseThrow(() -> new IllegalArgumentException("Model nije pronađen"));
+      ZamjenaVozilo z = new ZamjenaVozilo(m, dto.registracija);
+      if (dto.dostupno != null) z.setDostupno(dto.dostupno);
+      z = zamjenaRepo.save(z);
+      return ResponseEntity.ok(z);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    }
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<?> deleteZamjena(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+    if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
+    boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+    if (!isAdmin) return ResponseEntity.status(403).body("Samo administrator može brisati zamjenska vozila.");
+    try {
+      zamjenaService.delete(id);
+      return ResponseEntity.ok().build();
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    }
   }
 
   public static class ReserveDto {

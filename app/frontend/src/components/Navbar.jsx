@@ -100,6 +100,12 @@ function Navbar({ user }) {
 
               {user && user.uloga === 'administrator' && (
                 <li className="nav-item">
+                  <Link className="nav-link" to="/zamjene" onClick={() => setIsNavCollapsed(true)}>Zamjenska vozila</Link>
+                </li>
+              )}
+
+              {user && user.uloga === 'administrator' && (
+                <li className="nav-item">
                   <Link className="nav-link" to="/osobe" onClick={() => setIsNavCollapsed(true)}>Osobe</Link>
                 </li>
               )}

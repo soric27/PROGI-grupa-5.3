@@ -40,6 +40,19 @@ public class ZamjenaService {
     return candidates.stream().filter(z -> rezervacijaRepo.findOverlapping(z, from, to).isEmpty()).collect(Collectors.toList());
   }
 
+  // Admin helpers
+  public List<ZamjenaVozilo> listAll() {
+    return zamjenaRepo.findAll();
+  }
+
+
+
+  @Transactional
+  public void delete(Long id) {
+    ZamjenaVozilo z = zamjenaRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Zamjensko vozilo nije pronađeno"));
+    zamjenaRepo.delete(z);
+  }
+
   @Transactional
   public RezervacijaZamjene reserve(Long idPrijava, Long idZamjena, LocalDate from, LocalDate to) {
     if (from == null || to == null || from.isAfter(to)) throw new IllegalArgumentException("Invalid date range");

@@ -55,6 +55,7 @@ public class PrijavaServisaMapper {
                 vlasnik.getIdOsoba(),
                 voziloInfo,
                 vlasnikInfo,
+                p.getServiser().getIdServiser(),
                 serviserIme,
                 p.getNapomenaVlasnika(),
                 napomeneDto,

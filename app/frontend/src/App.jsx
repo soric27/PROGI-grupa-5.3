@@ -15,6 +15,7 @@ import Appointments from "./pages/Appointments";
 import RoleSelection from "./pages/RoleSelection";
 import Osobe from "./pages/Osobe";
 import Servis from "./pages/Servis";
+import Zamjene from "./pages/Zamjene";
 
 // --- AXIOS GLOBAL ---
 axios.defaults.baseURL = process.env.REACT_APP_API_URL;
@@ -59,6 +60,7 @@ function AppRoutes() {
       try {
         const payload = JSON.parse(atob(saved.split('.')[1]));
         setUser({
+          idOsoba: payload.id_osoba,
           email: payload.email,
           ime: payload.ime,
           prezime: payload.prezime,
@@ -84,6 +86,7 @@ function AppRoutes() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUser({
+          idOsoba: payload.id_osoba,
           email: payload.email,
           ime: payload.ime,
           prezime: payload.prezime,
@@ -111,6 +114,7 @@ function AppRoutes() {
           <Route path="/role-selection" element={<RoleSelection />} />
           <Route path="/servis" element={<Servis user={user} />} />
           <Route path="/osobe" element={<Osobe user={user} />} />
+          <Route path="/zamjene" element={<Zamjene user={user} />} />
         </Routes>
       </div>
     </>
