@@ -14,6 +14,7 @@ import Kontakt from "./pages/Kontakt";
 import Appointments from "./pages/Appointments";
 import RoleSelection from "./pages/RoleSelection";
 import Osobe from "./pages/Osobe";
+import Servis from "./pages/Servis";
 
 // --- AXIOS GLOBAL ---
 axios.defaults.baseURL = process.env.REACT_APP_API_URL;
@@ -108,6 +109,7 @@ function AppRoutes() {
           <Route path="/kontakt" element={<Kontakt />} />
           <Route path="/appointments" element={<Appointments user={user} />} />
           <Route path="/role-selection" element={<RoleSelection />} />
+          <Route path="/servis" element={<Servis user={user} />} />
           <Route path="/osobe" element={<Osobe user={user} />} />
         </Routes>
       </div>

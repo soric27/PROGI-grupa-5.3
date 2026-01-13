@@ -1,8 +1,16 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/Home.css';
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 function Home() {
+  const [about, setAbout] = useState(`Auto Servis MK2 je moderan servis s dugogodišnjom tradicijom i timom stručnih mehaničara, električara i dijagnostičara. Naša misija je učiniti održavanje i popravke vašeg vozila lakšim, bržim i transparentnijim nego ikad prije.`);
+
+  useEffect(() => {
+    axios.get('/api/servis').then(r => setAbout(r.data.aboutText)).catch(e => console.error(e));
+  }, []);
+
   return (
     <>
       {/* Hero sekcija */}
@@ -21,15 +29,7 @@ function Home() {
       {/* O nama sekcija */}
       <div className="container my-5">
         <h3 className="fw-bold mb-3 text-primary">O nama</h3>
-        <p style={{ fontSize: "1.15rem", lineHeight: "1.7" }}>
-          Auto Servis MK2 je moderan servis s dugogodišnjom tradicijom i timom stručnih mehaničara, električara i dijagnostičara. Naša misija je učiniti održavanje i popravke vašeg vozila lakšim, bržim i transparentnijim nego ikad prije.
-          <br /><br />
-          Koristimo najnoviju tehnologiju za dijagnostiku i praćenje statusa popravka, a naš online sustav omogućuje vam da prijavite vozilo, rezervirate termin i pratite svaku fazu servisa iz udobnosti doma.
-          <br /><br />
-          Vjerujemo u iskren pristup, vrhunsku uslugu i sigurnost naših klijenata. Zahvaljujući zamjenskim vozilima i digitalnom praćenju, nikada ne ostajete bez prijevoza ili informacija.
-          <br /><br />
-          Vaše povjerenje nam je na prvom mjestu — dobrodošli u servis gdje se vozila popravljaju s osmijehom!
-        </p>
+        <div style={{ fontSize: "1.15rem", lineHeight: "1.7" }} dangerouslySetInnerHTML={{ __html: about }} />
       </div>
     </>
   );

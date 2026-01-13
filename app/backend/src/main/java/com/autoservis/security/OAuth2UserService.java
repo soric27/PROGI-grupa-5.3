@@ -29,13 +29,8 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
     String prezime = (String)a.getOrDefault("family_name","");
 
     Osoba user = osobe.findByOauthId(oauthId).orElseGet(() -> {
-      // default role mapping; certain emails are pre-assigned specific roles
+      // default role mapping: everyone is a regular user by default
       String defaultRole = "korisnik";
-      if ("vitkovicdomagoj@gmail.com".equalsIgnoreCase(email)) {
-        defaultRole = "administrator";
-      } else if ("katarina.bencun2004@gmail.com".equalsIgnoreCase(email)) {
-        defaultRole = "serviser";
-      }
       return osobe.save(new Osoba(ime, prezime, email, defaultRole, oauthId));
     });
 

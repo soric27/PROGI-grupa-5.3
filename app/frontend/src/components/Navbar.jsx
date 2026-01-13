@@ -56,7 +56,7 @@ function Navbar({ user }) {
                   Početna
                 </Link>
               </li>
-              {!(user && user.uloga === 'serviser') && (
+              {!(user && (user.uloga === 'serviser' || user.uloga === 'administrator')) && (
                 <li className="nav-item">
                   <Link 
                     className="nav-link" 
@@ -77,15 +77,23 @@ function Navbar({ user }) {
                 </Link>
               </li>
 
-              <li className="nav-item">
-                <Link 
-                  className="nav-link" 
-                  to="/appointments" 
-                  onClick={() => setIsNavCollapsed(true)}
-                >
-                  Termini
-                </Link>
-              </li>
+              {!(user && user.uloga === 'administrator') && (
+                <li className="nav-item">
+                  <Link 
+                    className="nav-link" 
+                    to="/appointments" 
+                    onClick={() => setIsNavCollapsed(true)}
+                  >
+                    Termini
+                  </Link>
+                </li>
+              )}
+
+              {user && user.uloga === 'administrator' && (
+                <li className="nav-item">
+                  <Link className="nav-link" to="/servis" onClick={() => setIsNavCollapsed(true)}>Servis</Link>
+                </li>
+              )}
 
               {user && user.uloga === 'administrator' && (
                 <li className="nav-item">
