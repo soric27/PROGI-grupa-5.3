@@ -156,8 +156,10 @@ function Appointments({ user }) {
   const handleEditTerminSave = async () => {
     try {
       const id = editTerminModal.idPrijava;
-      // newTerminDatum format: 'YYYY-MM-DDTHH:mm'
-      await axios.put(`/api/prijave/${id}`, { newTerminDatum: editTerminModal.newDatum });
+      // newTerminDatum from input is 'YYYY-MM-DDTHH:mm' - append seconds to make ISO-complete value
+      const raw = editTerminModal.newDatum;
+      const payloadDate = raw ? (raw.length === 16 ? raw + ':00' : raw) : null;
+      await axios.put(`/api/prijave/${id}`, { newTerminDatum: payloadDate });
       setMessage('Termin je ažuriran.');
       setEditTerminModal(null);
       const r = await axios.get("/api/appointments/prijave/dodijeljene");
@@ -347,6 +349,46 @@ function Appointments({ user }) {
                 </form>
               </div>
             </div>
+
+            <div className="card mb-4">
+              <div className="card-body">
+                <h5 className="card-title">Moje prijave</h5>
+                {mojePrijave.length === 0 && <div className="text-muted">Nema prijava</div>}
+                <ul className="list-group mt-2">
+                  {mojePrijave.map(p => (
+                    <li className="list-group-item d-flex justify-content-between align-items-start" key={p.idPrijava}>
+                      <div>
+                        <div><strong>Status:</strong> {p.status}</div>
+                        <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
+                        <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
+                        <div><strong>Serviser:</strong> {p.serviserIme}</div>
+                      </div>
+                      <div>
+                        {user && (
+                          <>
+                            <button className="btn btn-sm btn-danger me-2" onClick={async ()=>{
+                              if (!window.confirm('Obrisati ovu prijavu?')) return;
+                              try {
+                                await axios.delete(`/api/appointments/prijave/${p.idPrijava}`);
+                                // refresh list
+                                const r = await axios.get(`/api/appointments/prijave/moje`);
+                                setMojePrijave(r.data);
+                              } catch (err) {
+                                console.error(err);
+                                alert('Greška pri brisanju prijave');
+                              }
+                            }}>Obriši</button>
+                            {(user.idOsoba === p.idVlasnik || user.uloga === 'administrator') && (
+                              <button className="btn btn-sm btn-outline-secondary" onClick={()=>openZamjena(p)}>Rezerviraj zamjensko vozilo</button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         ) : user && user.uloga === 'serviser' ? (
           <div className="col-md-12">
@@ -365,7 +407,7 @@ function Appointments({ user }) {
                       </div>
                       <div className="d-flex gap-2">
                         {/* Serviser can postpone term, change status, add note */}
-                        <button className="btn btn-sm btn-outline-secondary" onClick={()=>openEditTermin(p)}>Odgođi termin</button>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={()=>openEditTermin(p)}>Odgodi termin</button>
                         <button className="btn btn-sm btn-outline-primary" onClick={()=>setStatusModal({ idPrijava: p.idPrijava, noviStatus: p.status })}>Promijeni status</button>
                         <button className="btn btn-sm btn-outline-secondary" onClick={()=>setNoteModal({ idPrijava: p.idPrijava, opis: '' })}>Dodaj napomenu</button>
                       </div>

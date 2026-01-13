@@ -56,15 +56,17 @@ function Navbar({ user }) {
                   Početna
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link 
-                  className="nav-link" 
-                  to="/vozila" 
-                  onClick={() => setIsNavCollapsed(true)}
-                >
-                  Vozila
-                </Link>
-              </li>
+              {!(user && user.uloga === 'serviser') && (
+                <li className="nav-item">
+                  <Link 
+                    className="nav-link" 
+                    to="/vozila" 
+                    onClick={() => setIsNavCollapsed(true)}
+                  >
+                    Vozila
+                  </Link>
+                </li>
+              )} 
               <li className="nav-item">
                 <Link 
                   className="nav-link" 

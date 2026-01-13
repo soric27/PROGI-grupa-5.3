@@ -133,12 +133,14 @@ const handleSubmit = async (e) => {
     <div className="container mt-4">
       <h2 className="mb-3">Moja vozila</h2>
 
-      <button
-        className="btn btn-primary mb-3"
-        onClick={() => setShowForm(!showForm)}
-      >
-        {showForm ? "Zatvori unos" : "Dodaj vozilo"}
-      </button>
+      {(user && (user.uloga === 'korisnik' || user.uloga === 'administrator')) && (
+        <button
+          className="btn btn-primary mb-3"
+          onClick={() => setShowForm(!showForm)}
+        >
+          {showForm ? "Zatvori unos" : "Dodaj vozilo"}
+        </button>
+      )}
 
       {user && user.uloga === 'administrator' && (
         <div className="mb-3">
@@ -150,7 +152,7 @@ const handleSubmit = async (e) => {
         </div>
       )}
 
-      {showForm && (
+      {showForm && (user && (user.uloga === 'korisnik' || user.uloga === 'administrator')) && (
         <div className="card p-4 mb-4 shadow-sm">
           <h5 className="mb-3">Novi unos vozila</h5>
           <form onSubmit={handleSubmit}>
