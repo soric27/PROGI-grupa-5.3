@@ -190,4 +190,25 @@ public class AppointmentController {
         prijavaService.addNapomena(idPrijava, dto, idOsoba);
         return ResponseEntity.status(201).body(Map.of("message", "Napomena je dodana."));
     }
+
+    public static class UpdateVoziloDto { public Long idVozilo; }
+
+    @PatchMapping("/prijave/{id}/vozilo")
+    @PreAuthorize("hasAnyRole('SERVISER', 'ADMINISTRATOR')")
+    public ResponseEntity<?> updateVozilo(
+            @PathVariable("id") Long idPrijava,
+            @RequestBody UpdateVoziloDto dto,
+            @AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Niste prijavljeni."));
+        }
+
+        Long idOsoba = jwt.getClaim("id_osoba");
+        if (idOsoba == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Nevažeći token."));
+        }
+
+        prijavaService.updateVozilo(idPrijava, dto.idVozilo, idOsoba);
+        return ResponseEntity.ok(Map.of("message", "Vozilo je ažurirano."));
+    }
 }

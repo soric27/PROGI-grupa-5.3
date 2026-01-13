@@ -198,4 +198,29 @@ public class PrijavaServisaService {
         NapomenaServisera novaNapomena = new NapomenaServisera(prijava, dto.opis());
         napomeneRepo.save(novaNapomena);
     }
+
+    @Transactional
+    public void updateVozilo(Long idPrijava, Long idVozilo, Long idOsobaPrincipal) {
+        PrijavaServisa prijava = prijave.findById(idPrijava)
+                .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
+
+        // SIGURNOSNA PROVJERA: samo serviser dodijeljen prijavi (ili voditelj) može mijenjati vozilo
+        Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsobaPrincipal)
+                .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
+
+        if (!prijava.getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
+            throw new AccessDeniedException("Možete mijenjati vozilo samo kod svojih prijava.");
+        }
+
+        Vozilo novo = vozila.findById(idVozilo)
+                .orElseThrow(() -> new IllegalArgumentException("Vozilo ne postoji."));
+
+        // Provjeri da novo vozilo pripada istom vlasniku
+        if (!novo.getOsoba().getIdOsoba().equals(prijava.getVozilo().getOsoba().getIdOsoba())) {
+            throw new IllegalArgumentException("Novo vozilo mora pripadati istom vlasniku.");
+        }
+
+        prijava.setVozilo(novo);
+        prijave.save(prijava);
+    }
 }

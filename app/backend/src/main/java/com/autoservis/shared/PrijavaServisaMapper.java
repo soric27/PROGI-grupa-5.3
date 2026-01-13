@@ -34,6 +34,8 @@ public class PrijavaServisaMapper {
                 p.getIdPrijava(),
                 p.getStatus(),
                 p.getTermin().getDatumVrijeme(),
+                vozilo.getIdVozilo(),
+                vlasnik.getIdOsoba(),
                 voziloInfo,
                 vlasnikInfo,
                 serviserIme,

@@ -85,5 +85,9 @@ public class PrijavaServisa {
     public void setTermin(Termin termin) { this.termin = termin; }
     public void setDatumPredaje(LocalDateTime dt) { this.datumPredaje = dt; }
     public void setDatumPreuzimanja(LocalDateTime dt) { this.datumPreuzimanja = dt; }
+
+    // allow updating vehicle when authorized
+    public void setVozilo(Vozilo vozilo) { this.vozilo = vozilo; }
+
     // ... ostali setteri po potrebi
 }

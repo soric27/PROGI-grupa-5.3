@@ -23,6 +23,10 @@ function Appointments({ user }) {
   const [editing, setEditing] = useState(null); // { idPrijava, ime, prezime, email }
   const [message, setMessage] = useState("");
 
+  // serviser edit modals
+  const [editTerminModal, setEditTerminModal] = useState(null); // { idPrijava, newDatum }
+  const [changeVoziloModal, setChangeVoziloModal] = useState(null); // { idPrijava, ownerId, currentVoziloId, selectedVozilo, vehicles: [] }
+
   useEffect(() => {
     if (!user) {
       setServiseri([]); setMojePrijave([]); setDodijeljene([]);
@@ -135,6 +139,56 @@ function Appointments({ user }) {
     }
   };
 
+  // Serviser: edit termin
+  const openEditTermin = (p) => {
+    const dt = p.datumTermina ? new Date(p.datumTermina) : null;
+    const localVal = dt ? dt.toISOString().slice(0,16) : '';
+    setEditTerminModal({ idPrijava: p.idPrijava, newDatum: localVal });
+    setMessage(""); setError("");
+  };
+
+  const handleEditTerminSave = async () => {
+    try {
+      const id = editTerminModal.idPrijava;
+      // newTerminDatum format: 'YYYY-MM-DDTHH:mm'
+      await axios.put(`/api/prijave/${id}`, { newTerminDatum: editTerminModal.newDatum });
+      setMessage('Termin je ažuriran.');
+      setEditTerminModal(null);
+      const r = await axios.get("/api/appointments/prijave/dodijeljene");
+      setDodijeljene(r.data);
+    } catch (err) {
+      console.error(err);
+      setError(err?.response?.data?.message || 'Greška pri ažuriranju termina.');
+    }
+  };
+
+  // Serviser: change vehicle
+  const openChangeVozilo = async (p) => {
+    setChangeVoziloModal({ idPrijava: p.idPrijava, ownerId: p.idVlasnik, currentVoziloId: p.idVozilo, selectedVozilo: p.idVozilo, vehicles: [] });
+    setMessage(""); setError("");
+    try {
+      const r = await axios.get(`/api/vehicles/for/${p.idVlasnik}`);
+      setChangeVoziloModal(prev => ({ ...prev, vehicles: r.data }));
+    } catch (err) {
+      console.error(err);
+      setError('Greška pri dohvatu vozila vlasnika.');
+    }
+  };
+
+  const handleChangeVoziloSave = async () => {
+    try {
+      const id = changeVoziloModal.idPrijava;
+      await axios.patch(`/api/appointments/prijave/${id}/vozilo`, { idVozilo: Number(changeVoziloModal.selectedVozilo) });
+      setMessage('Vozilo je promijenjeno.');
+      setChangeVoziloModal(null);
+      const r = await axios.get("/api/appointments/prijave/dodijeljene");
+      setDodijeljene(r.data);
+    } catch (err) {
+      console.error(err);
+      setError(err?.response?.data?.message || 'Greška pri promjeni vozila.');
+    }
+  };
+
   if (!user) {
     return (
       <div className="container mt-5 text-center">
@@ -151,133 +205,232 @@ function Appointments({ user }) {
       {error && <div className="alert alert-danger">{error}</div>}
 
       <div className="row">
-        <div className="col-md-6">
-          <div className="card mb-4">
-            <div className="card-body">
-              <h5 className="card-title">Rezerviraj termin</h5>
-              {user && user.uloga === "administrator" && (
-                <div className="mb-2">
-                  <button className="btn btn-sm btn-outline-secondary" onClick={async (e) => {
-                    e.preventDefault();
-                    try {
-                      await axios.post('/api/debug/seed-test');
-                      // refresh data
-                      axios.get('/api/appointments/serviseri').then(r => setServiseri(r.data)).catch(e => console.error(e));
-                      axios.get('/api/vehicles').then(r => setVehicles(r.data)).catch(e => console.error(e));
-                      alert('Seed završen. Provjeri dropdown.');
-                    } catch (err) {
-                      console.error(err);
-                      alert('Seed nije uspio. Pogledaj konzolu.');
-                    }
-                  }}>Seed test data</button>
-                </div>
-              )}
+        {user && user.uloga === 'korisnik' ? (
+          <div className="col-md-12">
+            <div className="card mb-4">
+              <div className="card-body">
+                <h5 className="card-title">Rezerviraj termin</h5>
+                {user && user.uloga === "administrator" && (
+                  <div className="mb-2">
+                    <button className="btn btn-sm btn-outline-secondary" onClick={async (e) => {
+                      e.preventDefault();
+                      try {
+                        await axios.post('/api/debug/seed-test');
+                        // refresh data
+                        axios.get('/api/appointments/serviseri').then(r => setServiseri(r.data)).catch(e => console.error(e));
+                        axios.get('/api/vehicles').then(r => setVehicles(r.data)).catch(e => console.error(e));
+                        alert('Seed završen. Provjeri dropdown.');
+                      } catch (err) {
+                        console.error(err);
+                        alert('Seed nije uspio. Pogledaj konzolu.');
+                      }
+                    }}>Seed test data</button>
+                  </div>
+                )}
 
-              {user && user.uloga === 'administrator' && (
-                <div className="mb-3">
-                  <label className="form-label">Odaberite korisnika (admin)</label>
-                  <select className="form-select" value={selectedUserForAdmin} onChange={e=>setSelectedUserForAdmin(e.target.value)}>
-                    <option value="">-- odaberite korisnika --</option>
-                    {users.map(u => <option key={u.idOsoba} value={u.idOsoba}>{u.imePrezime} ({u.email})</option>)}
-                  </select>
-                </div>
-              )}
-              <form onSubmit={handleBook}>
-                <div className="mb-3">
-                  <label className="form-label">Odaberite vozilo</label>
-                  <select className="form-select" value={idVozilo} onChange={e=>setIdVozilo(e.target.value)} required>
-                    <option value="">-- odaberite vozilo --</option>
-                    {vehicles.map(v => <option key={v.id_vozilo} value={v.id_vozilo}>{v.registracija} ({v.model_naziv || v.marka_naziv || ''})</option>)}
-                  </select>
-                </div>
+                {user && user.uloga === 'administrator' && (
+                  <div className="mb-3">
+                    <label className="form-label">Odaberite korisnika (admin)</label>
+                    <select className="form-select" value={selectedUserForAdmin} onChange={e=>setSelectedUserForAdmin(e.target.value)}>
+                      <option value="">-- odaberite korisnika --</option>
+                      {users.map(u => <option key={u.idOsoba} value={u.idOsoba}>{u.imePrezime} ({u.email})</option>)}
+                    </select>
+                  </div>
+                )}
 
-                <div className="mb-3">
-                  <label className="form-label">Odaberite servisa</label>
-                  <select className="form-select" value={selectedServiser} onChange={e=>setSelectedServiser(e.target.value)} required>
-                    <option value="">-- odaberite --</option>
-                    {serviseri.map(s => <option key={s.idServiser} value={s.idServiser}>{s.imePrezime}</option>)}
-                  </select>
-                </div>
+                <form onSubmit={handleBook}>
+                  <div className="mb-3">
+                    <label className="form-label">Odaberite vozilo</label>
+                    <select className="form-select" value={idVozilo} onChange={e=>setIdVozilo(e.target.value)} required>
+                      <option value="">-- odaberite vozilo --</option>
+                      {vehicles.map(v => <option key={v.id_vozilo} value={v.id_vozilo}>{v.registracija} ({v.model_naziv || v.marka_naziv || ''})</option>)}
+                    </select>
+                  </div>
 
-                <div className="mb-3">
-                  <label className="form-label">Odaberite termin</label>
-                  <select className="form-select" value={selectedTermin} onChange={e=>setSelectedTermin(e.target.value)} required>
-                    <option value="">-- odaberite --</option>
-                    {termini.map(t => <option key={t.idTermin} value={t.idTermin}>{new Date(t.datumVrijeme).toLocaleString()}</option>)}
-                  </select>
-                </div>
+                  <div className="mb-3">
+                    <label className="form-label">Odaberite servisa</label>
+                    <select className="form-select" value={selectedServiser} onChange={e=>setSelectedServiser(e.target.value)} required>
+                      <option value="">-- odaberite --</option>
+                      {serviseri.map(s => <option key={s.idServiser} value={s.idServiser}>{s.imePrezime}</option>)}
+                    </select>
+                  </div>
 
-                <div className="mb-3">
-                  <label className="form-label">Napomena</label>
-                  <textarea className="form-control" value={napomena} onChange={e=>setNapomena(e.target.value)} rows={3}></textarea>
-                </div>
+                  <div className="mb-3">
+                    <label className="form-label">Odaberite termin</label>
+                    <select className="form-select" value={selectedTermin} onChange={e=>setSelectedTermin(e.target.value)} required>
+                      <option value="">-- odaberite --</option>
+                      {termini.map(t => <option key={t.idTermin} value={t.idTermin}>{new Date(t.datumVrijeme).toLocaleString()}</option>)}
+                    </select>
+                  </div>
 
-                <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? "Slanje..." : "Pošalji prijavu"}</button>
-              </form>
+                  <div className="mb-3">
+                    <label className="form-label">Napomena</label>
+                    <textarea className="form-control" value={napomena} onChange={e=>setNapomena(e.target.value)} rows={3}></textarea>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? "Slanje..." : "Pošalji prijavu"}</button>
+                </form>
+              </div>
             </div>
           </div>
-
-          <div className="card mb-4">
-            <div className="card-body">
-              <h5 className="card-title">Moje prijave</h5>
-              {mojePrijave.length === 0 && <div className="text-muted">Nema prijava</div>}
-              <ul className="list-group mt-2">
-                {mojePrijave.map(p => (
-                  <li className="list-group-item d-flex justify-content-between align-items-start" key={p.idPrijava}>
-                    <div>
-                      <div><strong>Status:</strong> {p.status}</div>
-                      <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
-                      <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
-                      <div><strong>Serviser:</strong> {p.serviserIme}</div>
-                    </div>
-                    <div>
-                      {user && user.uloga === 'administrator' ? (
-                        <button className="btn btn-sm btn-danger" onClick={async ()=>{
-                          if (!window.confirm('Obrisati ovu prijavu?')) return;
-                          try {
-                            await axios.delete(`/api/appointments/prijave/${p.idPrijava}`);
-                            // refresh list
-                            const r = await axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`);
-                            setMojePrijave(r.data);
-                          } catch (err) {
-                            console.error(err);
-                            alert('Greška pri brisanju prijave');
-                          }
-                        }}>Obriši</button>
-                      ) : (
-                        <></>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+        ) : user && user.uloga === 'serviser' ? (
+          <div className="col-md-12">
+            <div className="card mb-4">
+              <div className="card-body">
+                <h5 className="card-title">Prijave dodijeljene vama (samo za servisere)</h5>
+                {dodijeljene.length === 0 && <div className="text-muted">Nema dodijeljenih prijava</div>}
+                <ul className="list-group mt-2">
+                  {dodijeljene.map(p => (
+                    <li className="list-group-item d-flex justify-content-between align-items-start" key={p.idPrijava}>
+                      <div>
+                        <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
+                        <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
+                        <div><strong>Vlasnik:</strong> {p.vlasnikInfo}</div>
+                        <div><strong>Status:</strong> {p.status}</div>
+                      </div>
+                      <div className="d-flex gap-2">
+                        <button className="btn btn-sm btn-outline-primary" onClick={()=>openEdit(p)}>Uredi podatke vlasnika</button>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={()=>openEditTermin(p)}>Uredi termin</button>
+                        <button className="btn btn-sm btn-outline-success" onClick={()=>openChangeVozilo(p)}>Promijeni vozilo</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          // default admin / mixed view
+          <>
+            <div className="col-md-6">
+              <div className="card mb-4">
+                <div className="card-body">
+                  <h5 className="card-title">Rezerviraj termin</h5>
+                  {user && user.uloga === "administrator" && (
+                    <div className="mb-2">
+                      <button className="btn btn-sm btn-outline-secondary" onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          await axios.post('/api/debug/seed-test');
+                          // refresh data
+                          axios.get('/api/appointments/serviseri').then(r => setServiseri(r.data)).catch(e => console.error(e));
+                          axios.get('/api/vehicles').then(r => setVehicles(r.data)).catch(e => console.error(e));
+                          alert('Seed završen. Provjeri dropdown.');
+                        } catch (err) {
+                          console.error(err);
+                          alert('Seed nije uspio. Pogledaj konzolu.');
+                        }
+                      }}>Seed test data</button>
+                    </div>
+                  )}
 
-        <div className="col-md-6">
-          <div className="card mb-4">
-            <div className="card-body">
-              <h5 className="card-title">Prijave dodijeljene vama (samo za servisere)</h5>
-              {dodijeljene.length === 0 && <div className="text-muted">Nema dodijeljenih prijava</div>}
-              <ul className="list-group mt-2">
-                {dodijeljene.map(p => (
-                  <li className="list-group-item d-flex justify-content-between align-items-start" key={p.idPrijava}>
-                    <div>
-                      <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
-                      <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
-                      <div><strong>Vlasnik:</strong> {p.vlasnikInfo}</div>
-                      <div><strong>Status:</strong> {p.status}</div>
+                  {user && user.uloga === 'administrator' && (
+                    <div className="mb-3">
+                      <label className="form-label">Odaberite korisnika (admin)</label>
+                      <select className="form-select" value={selectedUserForAdmin} onChange={e=>setSelectedUserForAdmin(e.target.value)}>
+                        <option value="">-- odaberite korisnika --</option>
+                        {users.map(u => <option key={u.idOsoba} value={u.idOsoba}>{u.imePrezime} ({u.email})</option>)}
+                      </select>
                     </div>
-                    <div>
-                      <button className="btn btn-sm btn-outline-primary" onClick={()=>openEdit(p)}>Uredi podatke vlasnika</button>
+                  )}
+                  <form onSubmit={handleBook}>
+                    <div className="mb-3">
+                      <label className="form-label">Odaberite vozilo</label>
+                      <select className="form-select" value={idVozilo} onChange={e=>setIdVozilo(e.target.value)} required>
+                        <option value="">-- odaberite vozilo --</option>
+                        {vehicles.map(v => <option key={v.id_vozilo} value={v.id_vozilo}>{v.registracija} ({v.model_naziv || v.marka_naziv || ''})</option>)}
+                      </select>
                     </div>
-                  </li>
-                ))}
-              </ul>
+
+                    <div className="mb-3">
+                      <label className="form-label">Odaberite servisa</label>
+                      <select className="form-select" value={selectedServiser} onChange={e=>setSelectedServiser(e.target.value)} required>
+                        <option value="">-- odaberite --</option>
+                        {serviseri.map(s => <option key={s.idServiser} value={s.idServiser}>{s.imePrezime}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Odaberite termin</label>
+                      <select className="form-select" value={selectedTermin} onChange={e=>setSelectedTermin(e.target.value)} required>
+                        <option value="">-- odaberite --</option>
+                        {termini.map(t => <option key={t.idTermin} value={t.idTermin}>{new Date(t.datumVrijeme).toLocaleString()}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Napomena</label>
+                      <textarea className="form-control" value={napomena} onChange={e=>setNapomena(e.target.value)} rows={3}></textarea>
+                    </div>
+
+                    <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? "Slanje..." : "Pošalji prijavu"}</button>
+                  </form>
+                </div>
+              </div>
+
+              <div className="card mb-4">
+                <div className="card-body">
+                  <h5 className="card-title">Moje prijave</h5>
+                  {mojePrijave.length === 0 && <div className="text-muted">Nema prijava</div>}
+                  <ul className="list-group mt-2">
+                    {mojePrijave.map(p => (
+                      <li className="list-group-item d-flex justify-content-between align-items-start" key={p.idPrijava}>
+                        <div>
+                          <div><strong>Status:</strong> {p.status}</div>
+                          <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
+                          <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
+                          <div><strong>Serviser:</strong> {p.serviserIme}</div>
+                        </div>
+                        <div>
+                          {user && user.uloga === 'administrator' ? (
+                            <button className="btn btn-sm btn-danger" onClick={async ()=>{
+                              if (!window.confirm('Obrisati ovu prijavu?')) return;
+                              try {
+                                await axios.delete(`/api/appointments/prijave/${p.idPrijava}`);
+                                // refresh list
+                                const r = await axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`);
+                                setMojePrijave(r.data);
+                              } catch (err) {
+                                console.error(err);
+                                alert('Greška pri brisanju prijave');
+                              }
+                            }}>Obriši</button>
+                          ) : (
+                            <></>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+
+            <div className="col-md-6">
+              <div className="card mb-4">
+                <div className="card-body">
+                  <h5 className="card-title">Prijave dodijeljene vama (samo za servisere)</h5>
+                  {dodijeljene.length === 0 && <div className="text-muted">Nema dodijeljenih prijava</div>}
+                  <ul className="list-group mt-2">
+                    {dodijeljene.map(p => (
+                      <li className="list-group-item d-flex justify-content-between align-items-start" key={p.idPrijava}>
+                        <div>
+                          <div><strong>Termin:</strong> {p.datumTermina ? new Date(p.datumTermina).toLocaleString() : '-'}</div>
+                          <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
+                          <div><strong>Vlasnik:</strong> {p.vlasnikInfo}</div>
+                          <div><strong>Status:</strong> {p.status}</div>
+                        </div>
+                        <div>
+                          <button className="btn btn-sm btn-outline-primary" onClick={()=>openEdit(p)}>Uredi podatke vlasnika</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Edit modal simple */}
@@ -307,6 +460,59 @@ function Appointments({ user }) {
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={()=>setEditing(null)}>Odustani</button>
                 <button type="button" className="btn btn-primary" onClick={handleEditSave}>Spremi</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Serviser: edit termin modal */}
+      {editTerminModal && (
+        <div className="modal show d-block" tabIndex={-1} role="dialog">
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Uredi termin</h5>
+                <button type="button" className="btn-close" onClick={()=>setEditTerminModal(null)} aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {error && <div className="alert alert-danger">{error}</div>}
+                <div className="mb-3">
+                  <label className="form-label">Novi termin</label>
+                  <input type="datetime-local" className="form-control" value={editTerminModal.newDatum} onChange={e=>setEditTerminModal({...editTerminModal, newDatum: e.target.value})} />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={()=>setEditTerminModal(null)}>Odustani</button>
+                <button type="button" className="btn btn-primary" onClick={handleEditTerminSave}>Spremi</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Serviser: change vehicle modal */}
+      {changeVoziloModal && (
+        <div className="modal show d-block" tabIndex={-1} role="dialog">
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Promijeni vozilo</h5>
+                <button type="button" className="btn-close" onClick={()=>setChangeVoziloModal(null)} aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {error && <div className="alert alert-danger">{error}</div>}
+                <div className="mb-3">
+                  <label className="form-label">Odaberite vozilo vlasnika</label>
+                  <select className="form-select" value={changeVoziloModal.selectedVozilo} onChange={e=>setChangeVoziloModal({...changeVoziloModal, selectedVozilo: e.target.value})}>
+                    <option value="">-- odaberite --</option>
+                    {(changeVoziloModal.vehicles || []).map(v => <option key={v.id_vozilo} value={v.id_vozilo}>{v.registracija} ({v.model_naziv || v.marka_naziv || ''})</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={()=>setChangeVoziloModal(null)}>Odustani</button>
+                <button type="button" className="btn btn-primary" onClick={handleChangeVoziloSave}>Spremi</button>
               </div>
             </div>
           </div>
