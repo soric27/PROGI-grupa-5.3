@@ -175,6 +175,10 @@ INSERT INTO model (id_marka, naziv) VALUES
 -- Fiat
 (13, 'Panda'), (13, '500'), (13, 'Tipo'), (13, 'Punto'), (13, 'Doblo');
 
+INSERT INTO zamjena_vozilo (id_model, registracija, dostupno) VALUES (3, 'ZG-123-AB', TRUE);
+
+INSERT INTO zamjena_vozilo (id_model, registracija, dostupno) VALUES (5, 'ST-456-CD', TRUE);
+
 -- Example servis (optional)
 INSERT INTO servis (ime_servisa, lokacija) VALUES
 ('AutoServis Centar','Adresa 1')

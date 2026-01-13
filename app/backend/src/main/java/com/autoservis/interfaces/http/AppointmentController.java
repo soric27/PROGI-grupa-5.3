@@ -163,11 +163,18 @@ public class AppointmentController {
         return ResponseEntity.status(201).body(Map.of("message", "Prijava kreirana."));
     }
 
-    // ADMIN: obriši prijavu
+    // Delete prijava - owner (korisnik) or administrator
     @DeleteMapping("/prijave/{id}")
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
-    public ResponseEntity<?> deletePrijavaAdmin(@PathVariable("id") Long id) {
-        prijavaService.deletePrijavaAsAdmin(id);
+    public ResponseEntity<?> deletePrijava(@PathVariable("id") Long id, @AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Niste prijavljeni."));
+        }
+        Long idOsoba = jwt.getClaim("id_osoba");
+        if (idOsoba == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Nevažeći token."));
+        }
+        boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+        prijavaService.deletePrijava(id, idOsoba, isAdmin);
         return ResponseEntity.ok(Map.of("message", "Prijava obrisana."));
     }
     

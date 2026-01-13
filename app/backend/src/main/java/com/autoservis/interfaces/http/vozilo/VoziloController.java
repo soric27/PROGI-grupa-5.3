@@ -47,11 +47,12 @@ public class VoziloController {
         return ResponseEntity.status(201).body(created);
     }
 
-    // DELETE /api/vehicles/{id} - samo administrator
+    // DELETE /api/vehicles/{id} - owner or administrator
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
-    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
-        service.deleteById(id);
+    public ResponseEntity<?> delete(@PathVariable("id") Long id, @AuthenticationPrincipal Jwt jwt) {
+        Long idOsoba = requireUserId(jwt);
+        boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+        service.deleteIfAllowed(id, idOsoba, isAdmin);
         return ResponseEntity.ok(new Message("Vozilo " + id + " je obrisano."));
     }
 

@@ -1,19 +1,20 @@
 package com.autoservis.services;
 
-import com.autoservis.models.RezervacijaZamjene;
-import com.autoservis.models.ZamjenaVozilo;
-import com.autoservis.models.PrijavaServisa;
-import com.autoservis.repositories.RezervacijaZamjeneRepository;
-import com.autoservis.repositories.ZamjenaVoziloRepository;
-import com.autoservis.repositories.PrijavaServisaRepository;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.autoservis.models.PrijavaServisa;
+import com.autoservis.models.RezervacijaZamjene;
+import com.autoservis.models.ZamjenaVozilo;
+import com.autoservis.repositories.PrijavaServisaRepository;
+import com.autoservis.repositories.RezervacijaZamjeneRepository;
+import com.autoservis.repositories.ZamjenaVoziloRepository;
 
 @Service
 public class ZamjenaService {
@@ -62,6 +63,16 @@ public class ZamjenaService {
     logger.info("Created reservation {} for zamjena {} and prijava {}; marked zamjena as unavailable", rez.getIdRezervacija(), zamjena.getIdZamjena(), prijava.getIdPrijava());
 
     return rez;
+  }
+
+  // Reserve with authorization: only owner of prijava, serviser, or admin may reserve for a prijava
+  @Transactional
+  public RezervacijaZamjene reserveWithAuth(Long idPrijava, Long idZamjena, LocalDate from, LocalDate to, Long requesterId, boolean isAdmin, boolean isServiser) {
+    PrijavaServisa prijava = prijavaRepo.findById(idPrijava).orElseThrow(() -> new IllegalArgumentException("Prijava not found"));
+    if (!isAdmin && !isServiser && !prijava.getVozilo().getOsoba().getIdOsoba().equals(requesterId)) {
+      throw new org.springframework.security.access.AccessDeniedException("Nemate ovlasti rezervirati zamjensko vozilo za ovu prijavu.");
+    }
+    return reserve(idPrijava, idZamjena, from, to);
   }
 
   public List<RezervacijaZamjene> getReservationsForPrijava(Long idPrijava) {

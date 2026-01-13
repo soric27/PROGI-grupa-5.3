@@ -241,7 +241,7 @@ const handleSubmit = async (e) => {
                 <td>{v.model_naziv}</td>
                 <td>{v.registracija}</td>
                 <td>{v.godina_proizvodnje}</td>
-                {user && user.uloga === 'administrator' && (
+                {user && (
                   <td><button className="btn btn-sm btn-danger" onClick={async ()=>{
                     if (!window.confirm('Obrisati ovo vozilo?')) return;
                     try {

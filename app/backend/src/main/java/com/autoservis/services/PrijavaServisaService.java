@@ -145,6 +145,26 @@ public class PrijavaServisaService {
         prijave.deleteById(idPrijave);
     }
 
+    // Delete prijava: allowed for owner (korisnik) or administrator
+    @Transactional
+    public void deletePrijava(Long idPrijave, Long idOsobaPrincipal, boolean isAdmin) {
+        PrijavaServisa prijava = prijave.findById(idPrijave)
+                .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
+
+        Long ownerId = prijava.getVozilo().getOsoba().getIdOsoba();
+        if (!isAdmin && !ownerId.equals(idOsobaPrincipal)) {
+            throw new org.springframework.security.access.AccessDeniedException("Nemate ovlasti za brisanje ove prijave.");
+        }
+
+        Termin termin = prijava.getTermin();
+        if (termin != null) {
+            termin.setZauzet(false);
+            termini.save(termin);
+        }
+
+        prijave.deleteById(idPrijave);
+    }
+
     @Transactional(readOnly = true)
     public List<PrijavaDetalleDto> getPrijaveForKorisnik(Long idOsoba) {
         return prijave.findAll().stream()

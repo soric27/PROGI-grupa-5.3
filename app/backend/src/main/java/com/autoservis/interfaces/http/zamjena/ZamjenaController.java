@@ -1,15 +1,24 @@
 package com.autoservis.interfaces.http.zamjena;
 
-import com.autoservis.models.RezervacijaZamjene;
-import com.autoservis.models.ZamjenaVozilo;
-import com.autoservis.services.ZamjenaService;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.autoservis.models.RezervacijaZamjene;
+import com.autoservis.models.ZamjenaVozilo;
+import com.autoservis.services.ZamjenaService;
 
 @RestController
 @RequestMapping("/api/zamjene")
@@ -35,14 +44,21 @@ public class ZamjenaController {
   }
 
   @PostMapping("/rezervacije")
-  public ResponseEntity<?> reserve(@RequestBody ReserveDto dto) {
+  public ResponseEntity<?> reserve(@RequestBody ReserveDto dto, @AuthenticationPrincipal Jwt jwt) {
     try {
-      RezervacijaZamjene rez = zamjenaService.reserve(dto.idPrijava, dto.idZamjena, dto.datumOd, dto.datumDo);
+      if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
+      Long idOsoba = jwt.getClaim("id_osoba");
+      if (idOsoba == null) return ResponseEntity.status(401).body("Nevažeći token.");
+      boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+      boolean isServiser = "serviser".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+      RezervacijaZamjene rez = zamjenaService.reserveWithAuth(dto.idPrijava, dto.idZamjena, dto.datumOd, dto.datumDo, idOsoba, isAdmin, isServiser);
       return ResponseEntity.ok(rez);
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());
     } catch (IllegalStateException e) {
       return ResponseEntity.status(409).body(e.getMessage());
+    } catch (org.springframework.security.access.AccessDeniedException e) {
+      return ResponseEntity.status(403).body(e.getMessage());
     }
   }
 
