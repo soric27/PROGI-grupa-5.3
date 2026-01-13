@@ -7,6 +7,7 @@ function Appointments({ user }) {
   const [serviseri, setServiseri] = useState([]);
   const [mojePrijave, setMojePrijave] = useState([]);
   const [dodijeljene, setDodijeljene] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,6 +32,9 @@ function Appointments({ user }) {
 
     // fetch my prijave
     axios.get("/api/appointments/prijave/moje").then(r => setMojePrijave(r.data)).catch(e => console.error(e));
+
+    // fetch my vehicles so user can pick which vehicle to service
+    axios.get("/api/vehicles").then(r => setVehicles(r.data)).catch(e => console.error(e));
 
     // if serviser, fetch dodijeljene
     if (user && (user.uloga === "serviser" || user.uloga === "administrator")) {
@@ -120,10 +124,30 @@ function Appointments({ user }) {
           <div className="card mb-4">
             <div className="card-body">
               <h5 className="card-title">Rezerviraj termin</h5>
+              {user && user.uloga === "administrator" && (
+                <div className="mb-2">
+                  <button className="btn btn-sm btn-outline-secondary" onClick={async (e) => {
+                    e.preventDefault();
+                    try {
+                      await axios.post('/api/debug/seed-test');
+                      // refresh data
+                      axios.get('/api/appointments/serviseri').then(r => setServiseri(r.data)).catch(e => console.error(e));
+                      axios.get('/api/vehicles').then(r => setVehicles(r.data)).catch(e => console.error(e));
+                      alert('Seed završen. Provjeri dropdown.');
+                    } catch (err) {
+                      console.error(err);
+                      alert('Seed nije uspio. Pogledaj konzolu.');
+                    }
+                  }}>Seed test data</button>
+                </div>
+              )}
               <form onSubmit={handleBook}>
                 <div className="mb-3">
-                  <label className="form-label">Id vašeg vozila</label>
-                  <input className="form-control" value={idVozilo} onChange={e=>setIdVozilo(e.target.value)} placeholder="npr. 1" required />
+                  <label className="form-label">Odaberite vozilo</label>
+                  <select className="form-select" value={idVozilo} onChange={e=>setIdVozilo(e.target.value)} required>
+                    <option value="">-- odaberite vozilo --</option>
+                    {vehicles.map(v => <option key={v.id_vozilo} value={v.id_vozilo}>{v.registracija} ({v.model_naziv || v.marka_naziv || ''})</option>)}
+                  </select>
                 </div>
 
                 <div className="mb-3">

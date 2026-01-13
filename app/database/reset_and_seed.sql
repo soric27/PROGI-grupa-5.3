@@ -135,12 +135,45 @@ INSERT INTO marka (naziv) VALUES
 ('Audi'),('BMW'),('Volkswagen'),('Mercedes-Benz'),('Opel'),('Škoda'),('Toyota'),('Ford'),('Peugeot'),('Renault'),('Hyundai'),('Kia'),('Fiat')
 ON CONFLICT (naziv) DO NOTHING;
 
--- Models for a few brands (trimmed for brevity)
 INSERT INTO model (id_marka, naziv) VALUES
-(1, 'A1'), (1, 'A3'), (1, 'A4'),
-(2, '3 Series'), (2, 'X3'),
-(3, 'Golf'), (3, 'Passat')
-ON CONFLICT (id_marka, naziv) DO NOTHING;
+-- Audi
+(1, 'A1'), (1, 'A3'), (1, 'A4'), (1, 'A6'), (1, 'Q3'), (1, 'Q5'), (1, 'Q7'),
+
+-- BMW
+(2, '1 Series'), (2, '3 Series'), (2, '5 Series'), (2, 'X1'), (2, 'X3'), (2, 'X5'), (2, 'i3'),
+
+-- Volkswagen
+(3, 'Polo'), (3, 'Golf'), (3, 'Passat'), (3, 'Tiguan'), (3, 'Arteon'), (3, 'Touareg'),
+
+-- Mercedes-Benz
+(4, 'A-Class'), (4, 'B-Class'), (4, 'C-Class'), (4, 'E-Class'), (4, 'S-Class'), (4, 'GLA'), (4, 'GLC'),
+
+-- Opel
+(5, 'Corsa'), (5, 'Astra'), (5, 'Insignia'), (5, 'Mokka'), (5, 'Zafira'),
+
+-- Škoda
+(6, 'Fabia'), (6, 'Octavia'), (6, 'Superb'), (6, 'Karoq'), (6, 'Kodiaq'),
+
+-- Toyota
+(7, 'Yaris'), (7, 'Corolla'), (7, 'Camry'), (7, 'RAV4'), (7, 'C-HR'), (7, 'Hilux'),
+
+-- Ford
+(8, 'Fiesta'), (8, 'Focus'), (8, 'Mondeo'), (8, 'Kuga'), (8, 'Puma'),
+
+-- Peugeot
+(9, '208'), (9, '308'), (9, '3008'), (9, '5008'), (9, '508'),
+
+-- Renault
+(10, 'Clio'), (10, 'Megane'), (10, 'Captur'), (10, 'Kadjar'), (10, 'Talisman'),
+
+-- Hyundai
+(11, 'i10'), (11, 'i20'), (11, 'i30'), (11, 'Tucson'), (11, 'Santa Fe'),
+
+-- Kia
+(12, 'Picanto'), (12, 'Rio'), (12, 'Ceed'), (12, 'Sportage'), (12, 'Sorento'),
+
+-- Fiat
+(13, 'Panda'), (13, '500'), (13, 'Tipo'), (13, 'Punto'), (13, 'Doblo');
 
 -- Example servis (optional)
 INSERT INTO servis (ime_servisa, lokacija) VALUES
