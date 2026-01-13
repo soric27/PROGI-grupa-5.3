@@ -1,8 +1,6 @@
-import Mapa from '../components/Mapa';
-
 import { useEffect, useState } from 'react';
-import Mapa from '../components/Mapa';
 import axios from 'axios';
+import Mapa from '../components/Mapa';
 
 function Kontakt() {
   const [info, setInfo] = useState({ contactEmail: 'info@autoservis.hr', contactPhone: '+385 98 123 4567' });
