@@ -1,13 +1,18 @@
 package com.autoservis.interfaces.http.auth;
 
-import com.autoservis.models.Osoba;
-import com.autoservis.repositories.OsobaRepository;
-import com.autoservis.security.JwtTokenProvider;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.autoservis.models.Osoba;
+import com.autoservis.repositories.OsobaRepository;
+import com.autoservis.security.JwtTokenProvider;
+
+import jakarta.validation.constraints.NotBlank;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -46,14 +51,8 @@ public class RoleSelectionController {
             );
         }
 
-        // Ažuriraj ulogu u bazi
-        osoba = new Osoba(
-            osoba.getIme(),
-            osoba.getPrezime(),
-            osoba.getEmail(),
-            novaUloga,
-            osoba.getOauthId()
-        );
+        // Ažuriraj ulogu (ažuriramo postojeću osobu, ne kreiramo novu)
+        osoba.setUloga(novaUloga);
         osoba = osobaRepository.save(osoba);
 
         // Generiraj novi token sa novom ulogom

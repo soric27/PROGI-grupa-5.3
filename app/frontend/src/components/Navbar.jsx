@@ -75,6 +75,16 @@ function Navbar({ user }) {
                 </Link>
               </li>
 
+              <li className="nav-item">
+                <Link 
+                  className="nav-link" 
+                  to="/appointments" 
+                  onClick={() => setIsNavCollapsed(true)}
+                >
+                  Termini
+                </Link>
+              </li>
+
               <li className="nav-item ms-3">
                 {user ? (
                   <>

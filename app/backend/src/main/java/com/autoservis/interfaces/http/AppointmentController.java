@@ -1,19 +1,30 @@
 package com.autoservis.interfaces.http;
 
-import com.autoservis.interfaces.dto.*;
-import com.autoservis.interfaces.dto.PrijavaDetalleDto;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.autoservis.interfaces.dto.NapomenaCreateDto;
+import com.autoservis.interfaces.dto.PrijavaServisaCreateDto;
+import com.autoservis.interfaces.dto.ServiserDto;
+import com.autoservis.interfaces.dto.StatusUpdateDto;
+import com.autoservis.interfaces.dto.TerminDto;
 import com.autoservis.services.PrijavaServisaService;
 import com.autoservis.services.ServiserService;
 import com.autoservis.services.TerminService;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.security.access.prepost.PreAuthorize;
 
-import java.util.List;
-import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -110,6 +121,26 @@ public class AppointmentController {
         
         prijavaService.updateStatus(idPrijava, dto.noviStatus(), idOsoba);
         return ResponseEntity.ok(Map.of("message", "Status prijave je ažuriran."));
+    }
+
+    // Uredi podatke vlasnika prijave - samo za SERVISERE (ili voditelja)
+    @PatchMapping("/prijave/{id}/vlasnik")
+    @PreAuthorize("hasAnyRole('SERVISER', 'ADMINISTRATOR')")
+    public ResponseEntity<?> updateVlasnik(
+            @PathVariable("id") Long idPrijava,
+            @Valid @RequestBody com.autoservis.interfaces.dto.OsobaUpdateDto dto,
+            @AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Niste prijavljeni."));
+        }
+
+        Long idOsoba = jwt.getClaim("id_osoba");
+        if (idOsoba == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Nevažeći token."));
+        }
+
+        prijavaService.updateVlasnik(idPrijava, dto, idOsoba);
+        return ResponseEntity.ok(Map.of("message", "Podaci vlasnika su ažurirani."));
     }
     
     // Dodaj napomenu na prijavu - samo za SERVISERE

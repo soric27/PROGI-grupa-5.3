@@ -11,6 +11,7 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Vozila from "./pages/Vozila";
 import Kontakt from "./pages/Kontakt";
+import Appointments from "./pages/Appointments";
 import RoleSelection from "./pages/RoleSelection";
 
 // --- AXIOS GLOBAL ---
@@ -58,7 +59,8 @@ function AppRoutes() {
         setUser({
           email: payload.email,
           ime: payload.ime,
-          prezime: payload.prezime
+          prezime: payload.prezime,
+          uloga: payload.uloga
         });
       } catch (e) {
         setUser(null);
@@ -80,7 +82,8 @@ function AppRoutes() {
         setUser({
           email: payload.email,
           ime: payload.ime,
-          prezime: payload.prezime
+          prezime: payload.prezime,
+          uloga: payload.uloga
         });
       } catch (e) {
         console.error("Invalid JWT", e);
@@ -100,6 +103,7 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/vozila" element={<Vozila user={user} />} />
           <Route path="/kontakt" element={<Kontakt />} />
+          <Route path="/appointments" element={<Appointments user={user} />} />
           <Route path="/role-selection" element={<RoleSelection />} />
         </Routes>
       </div>
