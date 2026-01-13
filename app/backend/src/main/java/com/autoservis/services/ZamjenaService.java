@@ -65,11 +65,11 @@ public class ZamjenaService {
     return rez;
   }
 
-  // Reserve with authorization: only owner of prijava, serviser, or admin may reserve for a prijava
+  // Reserve with authorization: only owner of prijava or admin may reserve for a prijava
   @Transactional
-  public RezervacijaZamjene reserveWithAuth(Long idPrijava, Long idZamjena, LocalDate from, LocalDate to, Long requesterId, boolean isAdmin, boolean isServiser) {
+  public RezervacijaZamjene reserveWithAuth(Long idPrijava, Long idZamjena, LocalDate from, LocalDate to, Long requesterId, boolean isAdmin) {
     PrijavaServisa prijava = prijavaRepo.findById(idPrijava).orElseThrow(() -> new IllegalArgumentException("Prijava not found"));
-    if (!isAdmin && !isServiser && !prijava.getVozilo().getOsoba().getIdOsoba().equals(requesterId)) {
+    if (!isAdmin && !prijava.getVozilo().getOsoba().getIdOsoba().equals(requesterId)) {
       throw new org.springframework.security.access.AccessDeniedException("Nemate ovlasti rezervirati zamjensko vozilo za ovu prijavu.");
     }
     return reserve(idPrijava, idZamjena, from, to);

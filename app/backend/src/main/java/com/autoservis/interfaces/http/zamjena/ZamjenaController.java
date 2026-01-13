@@ -50,8 +50,7 @@ public class ZamjenaController {
       Long idOsoba = jwt.getClaim("id_osoba");
       if (idOsoba == null) return ResponseEntity.status(401).body("Nevažeći token.");
       boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
-      boolean isServiser = "serviser".equalsIgnoreCase((String) jwt.getClaim("uloga"));
-      RezervacijaZamjene rez = zamjenaService.reserveWithAuth(dto.idPrijava, dto.idZamjena, dto.datumOd, dto.datumDo, idOsoba, isAdmin, isServiser);
+      RezervacijaZamjene rez = zamjenaService.reserveWithAuth(dto.idPrijava, dto.idZamjena, dto.datumOd, dto.datumDo, idOsoba, isAdmin);
       return ResponseEntity.ok(rez);
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());

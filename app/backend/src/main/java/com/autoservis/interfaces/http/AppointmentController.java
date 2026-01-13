@@ -128,9 +128,9 @@ public class AppointmentController {
         return ResponseEntity.ok(Map.of("message", "Status prijave je ažuriran."));
     }
 
-    // Uredi podatke vlasnika prijave - samo za SERVISERE (ili voditelja)
+    // Uredi podatke vlasnika prijave - samo za ADMINISTRATORA
     @PatchMapping("/prijave/{id}/vlasnik")
-    @PreAuthorize("hasAnyRole('SERVISER', 'ADMINISTRATOR')")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<?> updateVlasnik(
             @PathVariable("id") Long idPrijava,
             @Valid @RequestBody com.autoservis.interfaces.dto.OsobaUpdateDto dto,
@@ -201,7 +201,7 @@ public class AppointmentController {
     public static class UpdateVoziloDto { public Long idVozilo; }
 
     @PatchMapping("/prijave/{id}/vozilo")
-    @PreAuthorize("hasAnyRole('SERVISER', 'ADMINISTRATOR')")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<?> updateVozilo(
             @PathVariable("id") Long idPrijava,
             @RequestBody UpdateVoziloDto dto,

@@ -36,8 +36,9 @@ public class VoziloController {
         return ResponseEntity.ok(service.getForOsoba(idOsoba));
     }
 
-    // POST /api/vehicles - dodaj novo vozilo za trenutnog korisnika
+    // POST /api/vehicles - dodaj novo vozilo za trenutnog korisnika (samo KORISNIK)
     @PostMapping
+    @PreAuthorize("hasRole('KORISNIK')")
     public ResponseEntity<VehicleDto> create(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody VehicleCreateDto body

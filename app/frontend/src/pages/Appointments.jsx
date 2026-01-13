@@ -27,6 +27,8 @@ function Appointments({ user }) {
   const [editTerminModal, setEditTerminModal] = useState(null); // { idPrijava, newDatum }
   const [changeVoziloModal, setChangeVoziloModal] = useState(null); // { idPrijava, ownerId, currentVoziloId, selectedVozilo, vehicles: [] }
   const [zamjenaModal, setZamjenaModal] = useState(null); // { idPrijava, datumOd, datumDo, available: [], selectedZamjena }
+  const [statusModal, setStatusModal] = useState(null); // { idPrijava, noviStatus }
+  const [noteModal, setNoteModal] = useState(null); // { idPrijava, opis }
 
   useEffect(() => {
     if (!user) {
@@ -115,6 +117,9 @@ function Appointments({ user }) {
       console.error(err);
       setError(err?.response?.data?.message || "Greška pri slanju prijave.");
     } finally { setLoading(false); }
+
+    // Show user where to check status
+    setMessage("Prijava poslana. Provjerite 'Moje prijave' za status prijave.");
   };
 
   const openEdit = (p) => {
@@ -163,6 +168,34 @@ function Appointments({ user }) {
     }
   };
 
+  const handleStatusSave = async () => {
+    try {
+      const id = statusModal.idPrijava;
+      await axios.patch(`/api/appointments/prijave/${id}/status`, { noviStatus: statusModal.noviStatus });
+      setMessage('Status je ažuriran.');
+      setStatusModal(null);
+      const r = await axios.get('/api/appointments/prijave/dodijeljene');
+      setDodijeljene(r.data);
+    } catch (err) {
+      console.error(err);
+      setError(err?.response?.data?.message || 'Greška pri ažuriranju statusa.');
+    }
+  };
+
+  const handleAddNote = async () => {
+    try {
+      const id = noteModal.idPrijava;
+      await axios.post(`/api/appointments/prijave/${id}/napomene`, { opis: noteModal.opis });
+      setMessage('Napomena dodana.');
+      setNoteModal(null);
+      const r = await axios.get('/api/appointments/prijave/dodijeljene');
+      setDodijeljene(r.data);
+    } catch (err) {
+      console.error(err);
+      setError(err?.response?.data?.message || 'Greška pri dodavanju napomene.');
+    }
+  };
+
   // Zamjensko vozilo: open modal and fetch available vehicles
   const openZamjena = async (p) => {
     const today = new Date().toISOString().slice(0,10);
@@ -189,7 +222,10 @@ function Appointments({ user }) {
       setMessage('Zamjensko vozilo rezervirano.');
       setZamjenaModal(null);
       // refresh relevant lists
-      if (user && (user.uloga === 'serviser' || user.uloga === 'administrator')) {
+      if (user && user.uloga === 'korisnik') {
+        const r = await axios.get('/api/appointments/prijave/moje');
+        setMojePrijave(r.data);
+      } else if (user && (user.uloga === 'serviser' || user.uloga === 'administrator')) {
         const r = await axios.get('/api/appointments/prijave/dodijeljene');
         setDodijeljene(r.data);
       }
@@ -201,14 +237,16 @@ function Appointments({ user }) {
 
   // Serviser: change vehicle
   const openChangeVozilo = async (p) => {
-    setChangeVoziloModal({ idPrijava: p.idPrijava, ownerId: p.idVlasnik, currentVoziloId: p.idVozilo, selectedVozilo: p.idVozilo, vehicles: [] });
+    setZamjenaModal({ idPrijava: p.idPrijava, datumOd: new Date().toISOString().slice(0,10), datumDo: new Date(new Date().setDate(new Date().getDate()+7)).toISOString().slice(0,10), available: [], selectedZamjena: null });
     setMessage(""); setError("");
     try {
-      const r = await axios.get(`/api/vehicles/for/${p.idVlasnik}`);
-      setChangeVoziloModal(prev => ({ ...prev, vehicles: r.data }));
+      const from = new Date().toISOString().slice(0,10);
+      const to = new Date(new Date().setDate(new Date().getDate()+7)).toISOString().slice(0,10);
+      const r = await axios.get(`/api/zamjene?from=${from}&to=${to}`);
+      setZamjenaModal(prev => ({ ...prev, available: r.data }));
     } catch (err) {
       console.error(err);
-      setError('Greška pri dohvatu vozila vlasnika.');
+      setError('Greška pri dohvatu zamjenskih vozila.');
     }
   };
 
@@ -326,10 +364,10 @@ function Appointments({ user }) {
                         <div><strong>Status:</strong> {p.status}</div>
                       </div>
                       <div className="d-flex gap-2">
-                        <button className="btn btn-sm btn-outline-primary" onClick={()=>openEdit(p)}>Uredi podatke vlasnika</button>
-                        <button className="btn btn-sm btn-outline-secondary" onClick={()=>openEditTermin(p)}>Uredi termin</button>
-                        <button className="btn btn-sm btn-outline-success" onClick={()=>openChangeVozilo(p)}>Promijeni vozilo</button>
-                        <button className="btn btn-sm btn-outline-secondary" onClick={()=>openZamjena(p)}>Rezerviraj zamjensko vozilo</button>
+                        {/* Serviser can postpone term, change status, add note */}
+                        <button className="btn btn-sm btn-outline-secondary" onClick={()=>openEditTermin(p)}>Odgođi termin</button>
+                        <button className="btn btn-sm btn-outline-primary" onClick={()=>setStatusModal({ idPrijava: p.idPrijava, noviStatus: p.status })}>Promijeni status</button>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={()=>setNoteModal({ idPrijava: p.idPrijava, opis: '' })}>Dodaj napomenu</button>
                       </div>
                     </li>
                   ))}
@@ -439,7 +477,9 @@ function Appointments({ user }) {
                                   alert('Greška pri brisanju prijave');
                                 }
                               }}>Obriši</button>
-                              <button className="btn btn-sm btn-outline-secondary" onClick={()=>openZamjena(p)}>Rezerviraj zamjensko vozilo</button>
+                              {(user.idOsoba === p.idVlasnik || user.uloga === 'administrator') && (
+                                <button className="btn btn-sm btn-outline-secondary" onClick={()=>openZamjena(p)}>Rezerviraj zamjensko vozilo</button>
+                              )}
                             </>
                           )}
                         </div>
@@ -593,6 +633,59 @@ function Appointments({ user }) {
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={()=>setZamjenaModal(null)}>Odustani</button>
                 <button type="button" className="btn btn-primary" onClick={handleReserveZamjena}>Rezerviraj</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status modal for serviser */}
+      {statusModal && (
+        <div className="modal show d-block" tabIndex={-1} role="dialog">
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Promijeni status prijave</h5>
+                <button type="button" className="btn-close" onClick={()=>setStatusModal(null)} aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Novi status</label>
+                  <select className="form-select" value={statusModal.noviStatus} onChange={e=>setStatusModal({...statusModal, noviStatus: e.target.value})}>
+                    <option value="zaprimljeno">zaprimljeno</option>
+                    <option value="u obradi">u obradi</option>
+                    <option value="završeno">završeno</option>
+                    <option value="odgođeno">odgođeno</option>
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={()=>setStatusModal(null)}>Odustani</button>
+                <button type="button" className="btn btn-primary" onClick={handleStatusSave}>Spremi</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Note modal for serviser */}
+      {noteModal && (
+        <div className="modal show d-block" tabIndex={-1} role="dialog">
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Dodaj napomenu</h5>
+                <button type="button" className="btn-close" onClick={()=>setNoteModal(null)} aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Opis napomene</label>
+                  <textarea className="form-control" value={noteModal.opis} onChange={e=>setNoteModal({...noteModal, opis: e.target.value})} rows={4}></textarea>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={()=>setNoteModal(null)}>Odustani</button>
+                <button type="button" className="btn btn-primary" onClick={handleAddNote}>Spremi</button>
               </div>
             </div>
           </div>

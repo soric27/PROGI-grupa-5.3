@@ -1,20 +1,22 @@
 package com.autoservis.services;
 
-import com.autoservis.models.PrijavaServisa;
-import com.autoservis.models.Termin;
-import com.autoservis.repositories.PrijavaServisaRepository;
-import com.autoservis.repositories.TerminRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import jakarta.mail.MessagingException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.autoservis.models.PrijavaServisa;
+import com.autoservis.models.Termin;
+import com.autoservis.repositories.PrijavaServisaRepository;
+import com.autoservis.repositories.TerminRepository;
+
+import jakarta.mail.MessagingException;
 
 @Service
 public class PrijavaService {
@@ -64,12 +66,18 @@ public class PrijavaService {
   }
 
   @Transactional
-  public Optional<PrijavaServisa> updatePrijava(Long id, LocalDateTime newTerminDate, String newStatus) throws IOException, MessagingException {
+  public Optional<PrijavaServisa> updatePrijava(Long id, LocalDateTime newTerminDate, String newStatus, Long requesterId, boolean isAdmin, boolean isServiser) throws IOException, MessagingException {
     Optional<PrijavaServisa> opt = prijavaRepo.findById(id);
     if (opt.isEmpty()) return opt;
 
     PrijavaServisa existing = opt.get();
     LocalDateTime oldTermin = existing.getTermin() != null ? existing.getTermin().getDatumVrijeme() : null;
+
+    // Authorization: only administrator or the assigned serviser may change status or postpone term
+    boolean isAssignedServiser = existing.getServiser() != null && existing.getServiser().getOsoba() != null && existing.getServiser().getOsoba().getIdOsoba().equals(requesterId);
+    if (!isAdmin && !isAssignedServiser) {
+      throw new org.springframework.security.access.AccessDeniedException("Nemate ovlasti za ažuriranje ove prijave.");
+    }
 
     if (newTerminDate != null) {
       Termin termin = new Termin(newTerminDate);

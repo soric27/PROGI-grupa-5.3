@@ -47,14 +47,7 @@ public class PrijavaServisaService {
         PrijavaServisa prijava = prijave.findById(idPrijava)
                 .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
 
-        // SIGURNOSNA PROVJERA: samo serviser dodijeljen prijavi (ili voditelj) može uređivati podatke vlasnika
-        Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsobaPrincipal)
-                .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
-
-        if (!prijava.getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
-            throw new AccessDeniedException("Možete uređivati podatke samo kod svojih prijava.");
-        }
-
+        // Only administrators should call this method (controller enforces it)
         // Dohvati vlasnika vozila i ažuriraj polja ako su proslijeđena
         com.autoservis.models.Osoba vlasnik = prijava.getVozilo().getOsoba();
         if (dto.ime() != null && !dto.ime().isBlank()) vlasnik.setIme(dto.ime());
@@ -224,14 +217,7 @@ public class PrijavaServisaService {
         PrijavaServisa prijava = prijave.findById(idPrijava)
                 .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
 
-        // SIGURNOSNA PROVJERA: samo serviser dodijeljen prijavi (ili voditelj) može mijenjati vozilo
-        Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsobaPrincipal)
-                .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
-
-        if (!prijava.getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
-            throw new AccessDeniedException("Možete mijenjati vozilo samo kod svojih prijava.");
-        }
-
+        // Only administrators should call this method (controller enforces it)
         Vozilo novo = vozila.findById(idVozilo)
                 .orElseThrow(() -> new IllegalArgumentException("Vozilo ne postoji."));
 
