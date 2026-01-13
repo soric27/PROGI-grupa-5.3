@@ -1,5 +1,7 @@
 package com.autoservis.interfaces.http.auth;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -13,9 +15,6 @@ import com.autoservis.models.Serviser;
 import com.autoservis.repositories.OsobaRepository;
 import com.autoservis.repositories.ServiserRepository;
 import com.autoservis.security.JwtTokenProvider;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import jakarta.validation.constraints.NotBlank;
 
@@ -64,11 +63,15 @@ public class RoleSelectionController {
             return ResponseEntity.status(400).body(new ErrorResponse("Nevažeći token (id_osoba)."));
         }
 
-        Osoba osoba = osobaRepository.findById(idOsoba)
-            .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
+        var osobaOpt = osobaRepository.findById(idOsoba);
+        if (osobaOpt.isEmpty()) {
+            log.warn("Korisnik s id {} nije pronađen", idOsoba);
+            return ResponseEntity.status(404).body(new ErrorResponse("Korisnik nije pronađen."));
+        }
+        Osoba osoba = osobaOpt.get();
 
         // Validiraj ulogu
-        String novaUloga = request.uloga().toLowerCase();
+        String novaUloga = request.uloga() == null ? "" : request.uloga().toLowerCase();
         if (!novaUloga.matches("korisnik|serviser|administrator")) {
             return ResponseEntity.badRequest().body(
                 new ErrorResponse("Nevažeća uloga. Dozvoljene su: korisnik, serviser, administrator")
@@ -77,13 +80,19 @@ public class RoleSelectionController {
 
         // Ažuriraj ulogu (ažuriramo postojeću osobu, ne kreiramo novu)
         osoba.setUloga(novaUloga);
-        osoba = osobaRepository.save(osoba);
+        try {
+            osoba = osobaRepository.save(osoba);
+        } catch (Exception ex) {
+            log.error("Greška pri spremanju uloge za osobu id {}: {}", idOsoba, ex.toString());
+            return ResponseEntity.status(500).body(new ErrorResponse("Pogreška pri ažuriranju uloge. Kontaktirajte administratora."));
+        }
+        final Osoba savedOsoba = osoba; // ensure effectively final for lambda
 
         // Ako je odabrana uloga "serviser", osiguraj da postoji zapis u tablici serviser
         if ("serviser".equals(novaUloga)) {
             try {
                 serviserRepository.findByOsoba_IdOsoba(idOsoba).orElseGet(() -> {
-                    Serviser s = new Serviser(osoba, false);
+                    Serviser s = new Serviser(savedOsoba, false);
                     return serviserRepository.save(s);
                 });
             } catch (Exception ex) {
@@ -93,7 +102,13 @@ public class RoleSelectionController {
         }
 
         // Generiraj novi token sa novom ulogom
-        String noviToken = jwtProvider.generateToken(osoba);
+        String noviToken;
+        try {
+            noviToken = jwtProvider.generateToken(osoba);
+        } catch (Exception ex) {
+            log.error("Greška pri generiranju tokena za osobu id {}: {}", idOsoba, ex.toString());
+            return ResponseEntity.status(500).body(new ErrorResponse("Pogreška pri generiranju tokena. Kontaktirajte administratora."));
+        }
 
         return ResponseEntity.ok(new RoleSelectionResponse(noviToken, "Uloga je uspješno odabrana."));
     }

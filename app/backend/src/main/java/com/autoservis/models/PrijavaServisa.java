@@ -1,7 +1,19 @@
 package com.autoservis.models;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "prijava_servisa")
@@ -64,5 +76,14 @@ public class PrijavaServisa {
     public String getNapomenaVlasnika() { return napomenaVlasnika; }
     
     public void setStatus(String status) { this.status = status; }
+
+    // getters for dates used by stats
+    public LocalDateTime getDatumPredaje() { return datumPredaje; }
+    public LocalDateTime getDatumPreuzimanja() { return datumPreuzimanja; }
+
+    // setter/getter for termin to support updates
+    public void setTermin(Termin termin) { this.termin = termin; }
+    public void setDatumPredaje(LocalDateTime dt) { this.datumPredaje = dt; }
+    public void setDatumPreuzimanja(LocalDateTime dt) { this.datumPreuzimanja = dt; }
     // ... ostali setteri po potrebi
 }

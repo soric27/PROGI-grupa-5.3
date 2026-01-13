@@ -1,20 +1,28 @@
 package com.autoservis.interfaces.http.prijava;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.autoservis.models.PrijavaServisa;
+import com.autoservis.models.Serviser;
 import com.autoservis.models.Termin;
 import com.autoservis.models.Vozilo;
 import com.autoservis.repositories.VoziloRepository;
 import com.autoservis.services.PdfService;
 import com.autoservis.services.PrijavaService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 import jakarta.mail.MessagingException;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/prijave")
@@ -28,6 +36,9 @@ public class PrijavaController {
 
   @Autowired
   private PdfService pdfService;
+
+  @Autowired
+  private com.autoservis.repositories.ServiserRepository serviserRepository;
 
   public static class CreatePrijavaDto {
     public Long idVozilo;
@@ -43,9 +54,17 @@ public class PrijavaController {
     if (v.isEmpty()) return ResponseEntity.badRequest().body("Vozilo nije pronađeno");
 
     Termin termin = null;
-    if (dto.terminDatum != null) termin = new Termin(dto.terminDatum);
+    Serviser serviser = null;
+    if (dto.idServiser != null) {
+      serviser = serviserRepository.findById(dto.idServiser).orElseThrow(() -> new IllegalArgumentException("Serviser nije pronađen"));
+    }
 
-    PrijavaServisa prijava = new PrijavaServisa(v.get(), dto.idServiser, termin, dto.napomenaVlasnika);
+    if (dto.terminDatum != null) {
+      termin = new Termin(dto.terminDatum);
+      if (serviser != null) termin.setServiser(serviser);
+    }
+
+    PrijavaServisa prijava = new PrijavaServisa(v.get(), serviser, termin, dto.napomenaVlasnika);
 
     // if termin was created, it needs to be saved via PrijavaService which will create a termin entity
     PrijavaServisa saved = prijavaService.createPrijava(prijava);
