@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autoservis.interfaces.dto.NapomenaCreateDto;
 import com.autoservis.interfaces.dto.PrijavaServisaCreateDto;
 import com.autoservis.interfaces.dto.ServiserDto;
 import com.autoservis.interfaces.dto.StatusUpdateDto;
-import com.autoservis.interfaces.dto.TerminDto;
 import com.autoservis.services.PrijavaServisaService;
 import com.autoservis.services.ServiserService;
 import com.autoservis.services.TerminService;
@@ -40,10 +40,14 @@ public class AppointmentController {
         this.prijavaService = prijavaService;
     }
 
-    // Endpoint za dohvaćanje slobodnih termina
+    // Endpoint za dohvaćanje slobodnih termina (samo za prijavljene korisnike)
     @GetMapping("/termini")
-    public ResponseEntity<List<TerminDto>> getSlobodniTermini() {
-        return ResponseEntity.ok(terminService.getSlobodniTermini());
+    public ResponseEntity<?> getSlobodniTermini(@RequestParam(required = false) Long serviserId,
+                                                @AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Niste prijavljeni."));
+        }
+        return ResponseEntity.ok(terminService.getSlobodniTermini(serviserId));
     }
 
     // Endpoint za dohvaćanje svih servisera

@@ -2,19 +2,22 @@ package com.autoservis.security;
 
 import java.time.Instant;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import com.autoservis.models.Osoba;
 import com.autoservis.repositories.OsobaRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
@@ -63,7 +66,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         String token = encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
 
-        String redirect = frontendUrl + "/#token=" + token;
+        // Pošalji korisnika na stranicu za izbor uloge tako da može odmah odabrati serviser/korisnik
+        String redirect = frontendUrl + "/role-selection?token=" + token;
         try {
             response.sendRedirect(redirect);
         } catch (Exception e) {

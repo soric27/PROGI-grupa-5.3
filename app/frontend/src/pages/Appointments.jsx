@@ -21,14 +21,16 @@ function Appointments({ user }) {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // fetch termini and serviseri
-    axios.get("/api/appointments/termini").then(r => setTermini(r.data)).catch(e => console.error(e));
+    if (!user) {
+      setServiseri([]); setMojePrijave([]); setDodijeljene([]);
+      return;
+    }
+
+    // fetch serviseri
     axios.get("/api/appointments/serviseri").then(r => setServiseri(r.data)).catch(e => console.error(e));
 
-    if (user) {
-      // fetch my prijave
-      axios.get("/api/appointments/prijave/moje").then(r => setMojePrijave(r.data)).catch(e => console.error(e));
-    }
+    // fetch my prijave
+    axios.get("/api/appointments/prijave/moje").then(r => setMojePrijave(r.data)).catch(e => console.error(e));
 
     // if serviser, fetch dodijeljene
     if (user && (user.uloga === "serviser" || user.uloga === "administrator")) {
@@ -36,8 +38,24 @@ function Appointments({ user }) {
     }
   }, [user]);
 
+  useEffect(() => {
+    // whenever serviser changes, fetch termini for that serviser (or all if none selected)
+    if (!user) {
+      setTermini([]);
+      return;
+    }
+
+    if (selectedServiser) {
+      axios.get(`/api/appointments/termini?serviserId=${selectedServiser}`).then(r => setTermini(r.data)).catch(e => console.error(e));
+    } else {
+      // if no serviser selected, clear or fetch all
+      setTermini([]);
+    }
+  }, [selectedServiser, user]);
+
   const handleBook = async (e) => {
     e.preventDefault();
+    if (!user) { setError("Molimo prijavite se prije rezervacije termina."); return; }
     setLoading(true); setError(""); setMessage("");
 
     try {
@@ -81,6 +99,14 @@ function Appointments({ user }) {
       setError(err?.response?.data?.message || "Greška pri ažuriranju.");
     }
   };
+
+  if (!user) {
+    return (
+      <div className="container mt-5 text-center">
+        <h4>Molimo prijavite se kako biste vidjeli termine i rezervirali termin.</h4>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-5">

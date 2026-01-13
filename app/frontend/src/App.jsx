@@ -72,7 +72,9 @@ function AppRoutes() {
   useEffect(() => {
     const token = readTokenFromURL(location);
 
-    if (token) {
+    // Ako smo na stranici za odabir uloge (role-selection), ne procesiramo token automatski
+    // jer želimo da RoleSelection.jsx dohvati token iz query parametra.
+    if (token && location.pathname !== "/role-selection") {
       sessionStorage.setItem(TOKEN_KEY, token);
       setAuthHeader(token);
 
@@ -93,7 +95,7 @@ function AppRoutes() {
       // Makni token iz URL-a bez reloada
       navigate("/", { replace: true });
     }
-  }, [location.search, location.hash, navigate]);
+  }, [location.search, location.hash, location.pathname, navigate]);
 
   return (
     <>

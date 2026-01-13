@@ -80,13 +80,16 @@ public class PrijavaServisaService {
         Termin termin = termini.findById(dto.idTermin())
                 .orElseThrow(() -> new IllegalArgumentException("Termin ne postoji."));
 
-        if (termin.isZauzet()) {
-            throw new IllegalStateException("Odabrani termin je u međuvremenu zauzet.");
+        // Provjeri da termin pripada odabranom serviseru
+        if (termin.getServiser() == null || !termin.getServiser().getIdServiser().equals(dto.idServiser())) {
+            throw new IllegalArgumentException("Odabrani termin ne pripada odabranom serviseru.");
         }
 
-        // Označi termin kao zauzet i spremi promjenu
-        termin.setZauzet(true);
-        termini.save(termin);
+        // Pokušaj atomskog markiranja termina kao zauzetog
+        int updated = termini.markAsTaken(termin.getIdTermin());
+        if (updated == 0) {
+            throw new IllegalStateException("Odabrani termin je u međuvremenu zauzet.");
+        }
 
         // Kreiraj i spremi novu prijavu
         PrijavaServisa novaPrijava = new PrijavaServisa(
