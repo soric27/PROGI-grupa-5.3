@@ -6,7 +6,11 @@ function Kontakt() {
   const [info, setInfo] = useState({ contactEmail: 'info@autoservis.hr', contactPhone: '+385 98 123 4567' });
 
   useEffect(() => {
-    axios.get('/api/servis').then(r => setInfo(r.data)).catch(e => console.error(e));
+    const fetch = () => axios.get('/api/servis').then(r => setInfo(r.data)).catch(e => console.error(e));
+    fetch();
+    const handler = () => fetch();
+    window.addEventListener('servis-updated', handler);
+    return () => window.removeEventListener('servis-updated', handler);
   }, []);
 
   return (

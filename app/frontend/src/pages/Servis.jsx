@@ -6,6 +6,8 @@ function Servis({ user }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(info);
   const [msg, setMsg] = useState('');
+  const [msgType, setMsgType] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     axios.get('/api/servis').then(r => setInfo(r.data)).catch(e => console.error(e));
@@ -16,14 +18,26 @@ function Servis({ user }) {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const save = async () => {
+    setMsg('');
+    setMsgType('');
+    setSaving(true);
     try {
-      const resp = await axios.post('/api/servis', form);
+      const token = sessionStorage.getItem('auth_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const resp = await axios.post('/api/servis', form, { headers });
       setInfo(resp.data);
       setMsg('Spremljeno');
+      setMsgType('success');
       setEditing(false);
+      // notify other pages to refetch servis info
+      window.dispatchEvent(new Event('servis-updated'));
     } catch (err) {
       console.error(err);
-      setMsg(err?.response?.data?.message || 'Greška pri spremanju');
+      const message = err?.response?.data?.message || err?.message || 'Greška pri spremanju';
+      setMsg(message);
+      setMsgType('error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -58,8 +72,8 @@ function Servis({ user }) {
             <textarea name="aboutText" value={form.aboutText} onChange={handleChange} className="form-control" rows={6} />
           </div>
 
-          <button className="btn btn-primary" onClick={save}>Spremi</button>
-          <span className="text-success ms-3">{msg}</span>
+          <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Spremanje...' : 'Spremi'}</button>
+          <span className={`ms-3 ${msgType === 'success' ? 'text-success' : msgType === 'error' ? 'text-danger' : ''}`}>{msg}</span>
         </div>
       )}
     </div>

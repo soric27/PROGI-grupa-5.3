@@ -8,7 +8,11 @@ function Home() {
   const [about, setAbout] = useState(`Auto Servis MK2 je moderan servis s dugogodišnjom tradicijom i timom stručnih mehaničara, električara i dijagnostičara. Naša misija je učiniti održavanje i popravke vašeg vozila lakšim, bržim i transparentnijim nego ikad prije.`);
 
   useEffect(() => {
-    axios.get('/api/servis').then(r => setAbout(r.data.aboutText)).catch(e => console.error(e));
+    const fetch = () => axios.get('/api/servis').then(r => setAbout(r.data.aboutText)).catch(e => console.error(e));
+    fetch();
+    const handler = () => fetch();
+    window.addEventListener('servis-updated', handler);
+    return () => window.removeEventListener('servis-updated', handler);
   }, []);
 
   return (

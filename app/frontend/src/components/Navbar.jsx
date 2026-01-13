@@ -47,15 +47,18 @@ function Navbar({ user }) {
           {/* Navbar sadržaj - responsive collapse */}
           <div className={`${isNavCollapsed ? 'collapse' : ''} navbar-collapse`} id="navbarNav">
             <ul className="navbar-nav ms-auto">
-              <li className="nav-item">
-                <Link 
-                  className="nav-link" 
-                  to="/" 
-                  onClick={() => setIsNavCollapsed(true)}
-                >
-                  Početna
-                </Link>
-              </li>
+              {!(user && (user.uloga === 'serviser' || user.uloga === 'administrator')) && (
+                <li className="nav-item">
+                  <Link 
+                    className="nav-link" 
+                    to="/" 
+                    onClick={() => setIsNavCollapsed(true)}
+                  >
+                    Početna
+                  </Link>
+                </li>
+              )}
+
               {!(user && (user.uloga === 'serviser' || user.uloga === 'administrator')) && (
                 <li className="nav-item">
                   <Link 
