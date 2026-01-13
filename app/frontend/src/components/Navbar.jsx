@@ -87,6 +87,12 @@ function Navbar({ user }) {
                 </Link>
               </li>
 
+              {user && user.uloga === 'administrator' && (
+                <li className="nav-item">
+                  <Link className="nav-link" to="/osobe" onClick={() => setIsNavCollapsed(true)}>Osobe</Link>
+                </li>
+              )}
+
               <li className="nav-item">
                 <Link 
                   className="nav-link" 

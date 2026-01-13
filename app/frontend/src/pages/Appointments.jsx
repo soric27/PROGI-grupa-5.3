@@ -260,7 +260,7 @@ function Appointments({ user }) {
     try {
       await axios.post('/api/zamjene/rezervacije', {
         idPrijava: zamjenaModal.idPrijava,
-        idZamjena: zamjenaModal.selectedZamjena,
+        idZamjena: Number(zamjenaModal.selectedZamjena),
         datumOd: zamjenaModal.datumOd,
         datumDo: zamjenaModal.datumDo
       });
@@ -388,6 +388,11 @@ function Appointments({ user }) {
                       const checked = e.target.checked;
                       setZamjenaRequested(checked);
                       if (!checked) { setZamjenaOd(''); setZamjenaDo(''); setAvailableZamjene([]); setSelectedZamjenaId(''); }
+                      else { // if enabling but no date range chosen, show all currently available zamjena
+                        if (!zamjenaOd || !zamjenaDo) {
+                          axios.get('/api/zamjene').then(r => setAvailableZamjene(r.data)).catch(e => console.error(e));
+                        }
+                      }
                     }} />
                     <label className="form-check-label" htmlFor="zamjenaCheck">Tražim zamjensko vozilo</label>
                   </div>
@@ -407,7 +412,7 @@ function Appointments({ user }) {
                           <label className="form-label">Odaberite zamjensko vozilo</label>
                           <select className="form-select" value={selectedZamjenaId} onChange={e => setSelectedZamjenaId(e.target.value)}>
                             <option value="">-- odaberite zamjensko vozilo --</option>
-                            {availableZamjene.map(z => <option key={z.id_zamjena} value={z.id_zamjena}>{z.registracija} ({z.model?.naziv || ''})</option>)}
+                            {availableZamjene.map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{z.registracija} ({z.model?.naziv || ''})</option>)}
                           </select>
                         </div>
                       </div>
@@ -763,7 +768,7 @@ function Appointments({ user }) {
                   <label className="form-label">Dostupna vozila</label>
                   <select className="form-select" value={zamjenaModal.selectedZamjena || ''} onChange={e => setZamjenaModal({...zamjenaModal, selectedZamjena: e.target.value})}>
                     <option value="">-- odaberite zamjensko vozilo --</option>
-                    {(zamjenaModal.available || []).map(z => <option key={z.id_zamjena} value={z.id_zamjena}>{z.registracija} ({z.model?.naziv || ''})</option>)}
+                    {(zamjenaModal.available || []).map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{z.registracija} ({z.model?.naziv || ''})</option>)}
                   </select>
                 </div>
               </div>
