@@ -10,7 +10,9 @@ function Zamjene({ user }) {
 
   useEffect(() => {
     if (!user || user.uloga !== 'administrator') return;
-    axios.get('/api/zamjene/all').then(r => setZamjene(r.data)).catch(e => console.error(e));
+    axios.get('/api/zamjene/all')
+      .then(r => setZamjene(r.data))
+      .catch(e => { console.error(e); alert(e?.response?.data || 'Greška pri dohvaćanju zamjena (provjerite konzolu)'); });
   }, [user]);
 
   useEffect(() => {
@@ -40,7 +42,9 @@ function Zamjene({ user }) {
       setZamjene(r.data);
       setNovo({ id_marka: "", id_model: "", registracija: "", dostupno: true });
     } catch (err) {
-      console.error(err); alert('Greška pri dodavanju zamjenskog vozila');
+      console.error(err);
+      const msg = err?.response?.data || err?.response?.data?.message || err?.message || 'Greška pri dodavanju zamjenskog vozila';
+      alert(msg);
     }
   };
 

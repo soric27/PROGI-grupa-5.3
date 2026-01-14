@@ -31,18 +31,28 @@ public class ZamjenaService {
     this.prijavaRepo = prijavaRepo;
   }
 
+  @Transactional(readOnly = true)
   public List<ZamjenaVozilo> listAvailable(LocalDate from, LocalDate to) {
-    // if no range provided, return all marked as dostupno
-    if (from == null || to == null) return zamjenaRepo.findByDostupnoTrue();
+    // if no range provided, return all marked as dostupno (ensure model is initialized)
+    if (from == null || to == null) {
+      List<ZamjenaVozilo> list = zamjenaRepo.findByDostupnoTrue();
+      list.forEach(z -> { if (z.getModel() != null) z.getModel().getNaziv(); });
+      return list;
+    }
 
     // otherwise filter those without overlapping reservations in given range and marked dostupno
     List<ZamjenaVozilo> candidates = zamjenaRepo.findByDostupnoTrue();
-    return candidates.stream().filter(z -> rezervacijaRepo.findOverlapping(z, from, to).isEmpty()).collect(Collectors.toList());
+    List<ZamjenaVozilo> filtered = candidates.stream().filter(z -> rezervacijaRepo.findOverlapping(z, from, to).isEmpty()).collect(Collectors.toList());
+    filtered.forEach(z -> { if (z.getModel() != null) z.getModel().getNaziv(); });
+    return filtered;
   }
 
   // Admin helpers
+  @Transactional(readOnly = true)
   public List<ZamjenaVozilo> listAll() {
-    return zamjenaRepo.findAll();
+    List<ZamjenaVozilo> list = zamjenaRepo.findAll();
+    list.forEach(z -> { if (z.getModel() != null) z.getModel().getNaziv(); });
+    return list;
   }
 
 
