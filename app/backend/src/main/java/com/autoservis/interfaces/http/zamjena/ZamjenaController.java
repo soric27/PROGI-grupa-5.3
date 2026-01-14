@@ -39,6 +39,25 @@ public class ZamjenaController {
 
   private static final Logger logger = LoggerFactory.getLogger(ZamjenaController.class);
 
+  // helper to read string claim safely (handles String, List, numeric values)
+  private String claimAsString(Jwt jwt, String name) {
+    Object raw = jwt == null ? null : jwt.getClaim(name);
+    if (raw == null) return null;
+    if (raw instanceof String) return (String) raw;
+    if (raw instanceof java.util.List) {
+      java.util.List<?> l = (java.util.List<?>) raw;
+      return l.isEmpty() ? null : String.valueOf(l.get(0));
+    }
+    return String.valueOf(raw);
+  }
+
+  private Long claimAsLong(Jwt jwt, String name) {
+    Object raw = jwt == null ? null : jwt.getClaim(name);
+    if (raw == null) return null;
+    if (raw instanceof Number) return ((Number) raw).longValue();
+    try { return Long.parseLong(String.valueOf(raw)); } catch (Exception e) { return null; }
+  }
+
   @GetMapping
   public ResponseEntity<?> listAvailable(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
@@ -50,7 +69,7 @@ public class ZamjenaController {
   @GetMapping("/all")
   public ResponseEntity<?> listAll(@AuthenticationPrincipal Jwt jwt) {
     if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
-    boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+    boolean isAdmin = "administrator".equalsIgnoreCase(claimAsString(jwt, "uloga"));
     if (!isAdmin) return ResponseEntity.status(403).body("Samo administrator može vidjeti sve zamjenske liste.");
     try {
       return ResponseEntity.ok(zamjenaService.listAll());
@@ -69,7 +88,7 @@ public class ZamjenaController {
   @PostMapping
   public ResponseEntity<?> createZamjena(@RequestBody CreateZamjenaDto dto, @AuthenticationPrincipal Jwt jwt) {
     if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
-    boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+    boolean isAdmin = "administrator".equalsIgnoreCase(claimAsString(jwt, "uloga"));
     if (!isAdmin) return ResponseEntity.status(403).body("Samo administrator može dodavati zamjenska vozila.");
     try {
       String registracija = dto.registracija == null ? "" : dto.registracija.trim();
@@ -91,7 +110,7 @@ public class ZamjenaController {
   @DeleteMapping("/{id}")
   public ResponseEntity<?> deleteZamjena(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
     if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
-    boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+    boolean isAdmin = "administrator".equalsIgnoreCase(claimAsString(jwt, "uloga"));
     if (!isAdmin) return ResponseEntity.status(403).body("Samo administrator može brisati zamjenska vozila.");
     try {
       zamjenaService.delete(id);
@@ -114,9 +133,9 @@ public class ZamjenaController {
   public ResponseEntity<?> reserve(@RequestBody ReserveDto dto, @AuthenticationPrincipal Jwt jwt) {
     try {
       if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
-      Long idOsoba = jwt.getClaim("id_osoba");
+      Long idOsoba = claimAsLong(jwt, "id_osoba");
       if (idOsoba == null) return ResponseEntity.status(401).body("Nevažeći token.");
-      boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+      boolean isAdmin = "administrator".equalsIgnoreCase(claimAsString(jwt, "uloga"));
       RezervacijaZamjene rez = zamjenaService.reserveWithAuth(dto.idPrijava, dto.idZamjena, dto.datumOd, dto.datumDo, idOsoba, isAdmin);
       return ResponseEntity.ok(rez);
     } catch (IllegalArgumentException e) {
