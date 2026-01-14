@@ -12,7 +12,12 @@ function Zamjene({ user }) {
     if (!user || user.uloga !== 'administrator') return;
     axios.get('/api/zamjene/all')
       .then(r => setZamjene(r.data))
-      .catch(e => { console.error(e); alert(e?.response?.data || 'Greška pri dohvaćanju zamjena (provjerite konzolu)'); });
+      .catch(e => {
+        console.error(e);
+        const data = e?.response?.data;
+        const msg = typeof data === 'string' ? data : (data?.message || (typeof data === 'object' ? JSON.stringify(data) : null));
+        alert(msg || 'Greška pri dohvaćanju zamjena (provjerite konzolu)');
+      });
   }, [user]);
 
   useEffect(() => {
@@ -43,8 +48,9 @@ function Zamjene({ user }) {
       setNovo({ id_marka: "", id_model: "", registracija: "", dostupno: true });
     } catch (err) {
       console.error(err);
-      const msg = err?.response?.data || err?.response?.data?.message || err?.message || 'Greška pri dodavanju zamjenskog vozila';
-      alert(msg);
+      const data = err?.response?.data;
+      const msg = typeof data === 'string' ? data : (data?.message || (typeof data === 'object' ? JSON.stringify(data) : err?.message));
+      alert(msg || 'Greška pri dodavanju zamjenskog vozila');
     }
   };
 

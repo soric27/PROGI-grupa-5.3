@@ -3,6 +3,8 @@ package com.autoservis.interfaces.http.zamjena;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -35,6 +37,8 @@ public class ZamjenaController {
   @Autowired
   private com.autoservis.repositories.ModelRepository modelRepo;
 
+  private static final Logger logger = LoggerFactory.getLogger(ZamjenaController.class);
+
   @GetMapping
   public ResponseEntity<?> listAvailable(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
@@ -48,7 +52,12 @@ public class ZamjenaController {
     if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
     boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
     if (!isAdmin) return ResponseEntity.status(403).body("Samo administrator može vidjeti sve zamjenske liste.");
-    return ResponseEntity.ok(zamjenaService.listAll());
+    try {
+      return ResponseEntity.ok(zamjenaService.listAll());
+    } catch (Exception e) {
+      logger.error("Error listing replacement vehicles", e);
+      return ResponseEntity.status(500).body(e.getMessage() == null ? "Internal server error" : e.getMessage());
+    }
   }
 
   public static class CreateZamjenaDto {
