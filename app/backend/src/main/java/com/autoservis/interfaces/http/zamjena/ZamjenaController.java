@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -69,6 +70,9 @@ public class ZamjenaController {
       return ResponseEntity.ok(z);
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());
+    } catch (DataIntegrityViolationException e) {
+      // likely unique constraint on registracija violated
+      return ResponseEntity.status(409).body("Registracija već postoji");
     }
   }
 

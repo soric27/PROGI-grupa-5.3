@@ -128,6 +128,19 @@ CREATE TABLE izvjestaj (
     putanja_dat TEXT NOT NULL
 );
 
+-- Extra table for service contact/info (application expects this table via JPA entity ServisInfo)
+CREATE TABLE servis_info (
+    id SERIAL PRIMARY KEY,
+    contact_email VARCHAR(100),
+    contact_phone VARCHAR(50),
+    about_text TEXT
+);
+
+-- Seed a default servis_info row (idempotent)
+INSERT INTO servis_info (contact_email, contact_phone, about_text)
+SELECT 'info@autoservis.hr', '+38512345678', 'Auto Servis MK2 - najbolji servisi u gradu.'
+WHERE NOT EXISTS (SELECT 1 FROM servis_info);
+
 -- === Seed data ===
 
 -- Brands
@@ -175,14 +188,21 @@ INSERT INTO model (id_marka, naziv) VALUES
 -- Fiat
 (13, 'Panda'), (13, '500'), (13, 'Tipo'), (13, 'Punto'), (13, 'Doblo');
 
-INSERT INTO zamjena_vozilo (id_model, registracija, dostupno) VALUES (3, 'ZG-123-AB', TRUE);
-
-INSERT INTO zamjena_vozilo (id_model, registracija, dostupno) VALUES (5, 'ST-456-CD', TRUE);
 
 -- Example servis (optional)
 INSERT INTO servis (ime_servisa, lokacija) VALUES
 ('AutoServis Centar','Adresa 1')
 ON CONFLICT DO NOTHING;
+
+-- Sample replacement vehicles (idempotent)
+-- Use existing models by name to avoid hard-coded ids
+INSERT INTO zamjena_vozilo (id_model, registracija, dostupno)
+SELECT id_model, '123abc457', true FROM model WHERE naziv = 'A4' LIMIT 1
+ON CONFLICT (registracija) DO NOTHING;
+
+INSERT INTO zamjena_vozilo (id_model, registracija, dostupno)
+SELECT id_model, 'st1234bd', true FROM model WHERE naziv = 'Corsa' LIMIT 1
+ON CONFLICT (registracija) DO NOTHING;
 
 -- Sample people (idempotent)
 INSERT INTO osoba (ime, prezime, email, uloga, oauth_id)
