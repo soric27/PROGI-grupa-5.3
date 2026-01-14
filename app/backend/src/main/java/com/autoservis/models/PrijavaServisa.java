@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
@@ -65,8 +66,18 @@ public class PrijavaServisa {
     @OneToMany(mappedBy = "prijavaServisa", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<NapomenaServisera> napomene = new java.util.ArrayList<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @jakarta.persistence.JoinTable(
+        name = "prijava_kvar",
+        joinColumns = @JoinColumn(name = "id_prijava"),
+        inverseJoinColumns = @JoinColumn(name = "id_kvar")
+    )
+    private java.util.List<Kvar> kvarovi = new java.util.ArrayList<>();
+
     // Getteri i Setteri
     public java.util.List<NapomenaServisera> getNapomene() { return napomene; }
+    public java.util.List<Kvar> getKvarovi() { return kvarovi; }
+    public void setKvarovi(java.util.List<Kvar> kvarovi) { this.kvarovi = kvarovi; }
     public Long getIdPrijava() { return idPrijava; }
     public Vozilo getVozilo() { return vozilo; }
     public Serviser getServiser() { return serviser; }

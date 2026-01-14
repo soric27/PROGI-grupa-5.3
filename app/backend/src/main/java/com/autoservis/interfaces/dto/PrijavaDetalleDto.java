@@ -15,5 +15,6 @@ public record PrijavaDetalleDto(
     String serviserIme,
     String napomenaVlasnika,
     List<NapomenaDto> napomeneServisera,
-    RezervacijaZamjeneDto rezervacijaZamjene
+    RezervacijaZamjeneDto rezervacijaZamjene,
+    List<KvarDto> kvarovi
 ) {}

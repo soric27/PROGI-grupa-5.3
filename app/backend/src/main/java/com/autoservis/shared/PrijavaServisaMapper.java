@@ -3,6 +3,7 @@ package com.autoservis.shared;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
+import com.autoservis.interfaces.dto.KvarDto;
 import com.autoservis.interfaces.dto.NapomenaDto;
 import com.autoservis.interfaces.dto.PrijavaDetalleDto;
 import com.autoservis.interfaces.dto.RezervacijaZamjeneDto;
@@ -36,6 +37,10 @@ public class PrijavaServisaMapper {
                 .map(n -> new NapomenaDto(n.getIdNapomena(), n.getDatum(), n.getOpis()))
                 .collect(Collectors.toList());
 
+        var kvaroveDto = p.getKvarovi().stream()
+                .map(k -> new KvarDto(k.getIdKvar(), k.getNaziv(), k.getOpis()))
+                .collect(Collectors.toList());
+
         RezervacijaZamjeneDto rezDto = null;
         if (rez != null) {
             rezDto = new RezervacijaZamjeneDto(
@@ -59,7 +64,8 @@ public class PrijavaServisaMapper {
                 serviserIme,
                 p.getNapomenaVlasnika(),
                 napomeneDto,
-                rezDto
+                rezDto,
+                kvaroveDto
         );
     }
 }

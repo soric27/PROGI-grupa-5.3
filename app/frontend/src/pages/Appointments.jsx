@@ -18,6 +18,8 @@ function Appointments({ user }) {
   const [selectedServiser, setSelectedServiser] = useState("");
   const [selectedTermin, setSelectedTermin] = useState("");
   const [napomena, setNapomena] = useState("");
+  const [selectedKvarovi, setSelectedKvarovi] = useState([]); // list of selected kvar IDs
+  const [kvarovi, setKvarovi] = useState([]); // list of all available kvarovi
 
   // replacement vehicle request
   const [zamjenaRequested, setZamjenaRequested] = useState(false);
@@ -51,6 +53,9 @@ function Appointments({ user }) {
 
     // fetch my vehicles so user can pick which vehicle to service
     axios.get("/api/vehicles").then(r => setVehicles(r.data)).catch(e => console.error(e));
+
+    // fetch available kvarovi (defects)
+    axios.get("/api/kvarovi").then(r => setKvarovi(r.data)).catch(e => console.error(e));
 
     // ako je admin, dohvati listu korisnika za upravljanje
     if (user && user.uloga === "administrator") {
@@ -129,13 +134,15 @@ function Appointments({ user }) {
           napomenaVlasnika: napomena || null,
           idZamjena: selectedZamjenaId ? Number(selectedZamjenaId) : null,
           datumOd: zamjenaOd || null,
-          datumDo: zamjenaDo || null
+          datumDo: zamjenaDo || null,
+          idKvarovi: selectedKvarovi.length > 0 ? selectedKvarovi.map(Number) : []
         });
         setMessage("Prijava kreirana za odabranog korisnika.");
         // refresh admin view of that user's prijave
         const r = await axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`);
         setMojePrijave(r.data);
-        // reset zamjena inputs
+        // reset form
+        setIdVozilo(''); setSelectedServiser(''); setSelectedTermin(''); setNapomena(''); setSelectedKvarovi([]);
         setZamjenaRequested(false); setZamjenaOd(''); setZamjenaDo(''); setSelectedZamjenaId(''); setAvailableZamjene([]);
       } else {
         await axios.post("/api/appointments/prijave", {
@@ -145,11 +152,12 @@ function Appointments({ user }) {
           napomenaVlasnika: napomena || null,
           idZamjena: selectedZamjenaId ? Number(selectedZamjenaId) : null,
           datumOd: zamjenaOd || null,
-          datumDo: zamjenaDo || null
+          datumDo: zamjenaDo || null,
+          idKvarovi: selectedKvarovi.length > 0 ? selectedKvarovi.map(Number) : []
         });
 
         setMessage("Prijava poslana.");
-        setIdVozilo(""); setSelectedServiser(""); setSelectedTermin(""); setNapomena("");
+        setIdVozilo(""); setSelectedServiser(""); setSelectedTermin(""); setNapomena(""); setSelectedKvarovi([]);
             // refresh my prijave
         const r = await axios.get("/api/appointments/prijave/moje");
         setMojePrijave(r.data);
@@ -393,6 +401,36 @@ function Appointments({ user }) {
                     </select>
                   </div>
 
+                  <div className="mb-3">
+                    <label className="form-label">Odaberite kvarove (defekte)</label>
+                    <div className="border rounded p-2">
+                      {kvarovi.length === 0 ? (
+                        <div className="text-muted">Nema dostupnih kvarova</div>
+                      ) : (
+                        kvarovi.map(kvar => (
+                          <div key={kvar.id_kvar} className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`kvar-${kvar.id_kvar}`}
+                              checked={selectedKvarovi.includes(kvar.id_kvar)}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  setSelectedKvarovi([...selectedKvarovi, kvar.id_kvar]);
+                                } else {
+                                  setSelectedKvarovi(selectedKvarovi.filter(k => k !== kvar.id_kvar));
+                                }
+                              }}
+                            />
+                            <label className="form-check-label" htmlFor={`kvar-${kvar.id_kvar}`}>
+                              <strong>{kvar.naziv}</strong> {kvar.opis && `- ${kvar.opis}`}
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
                   <div className="mb-3 form-check">
                     <input className="form-check-input" type="checkbox" id="zamjenaCheck" checked={zamjenaRequested} onChange={e => {
                       const checked = e.target.checked;
@@ -457,6 +495,16 @@ function Appointments({ user }) {
                         <div className="mt-2"><strong>Napomena vlasnika:</strong> {p.napomenaVlasnika || <span className="text-muted">-</span>}</div>
                         <div><strong>Napomena servisera:</strong> {p.napomeneServisera && p.napomeneServisera.length ? p.napomeneServisera[0].opis : <span className="text-muted">-</span>}</div>
                         <div className="mt-1"><strong>Zamjensko vozilo:</strong> {p.rezervacijaZamjene ? `${p.rezervacijaZamjene.registracija} (${p.rezervacijaZamjene.datumOd} — ${p.rezervacijaZamjene.datumDo})` : <span className="text-muted">-</span>}</div>
+                        {p.kvarovi && p.kvarovi.length > 0 && (
+                          <div className="mt-2">
+                            <strong>Kvarovi:</strong>
+                            <ul className="mb-0 ms-3">
+                              {p.kvarovi.map(kv => (
+                                <li key={kv.id_kvar}>{kv.naziv} {kv.opis && `- ${kv.opis}`}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                       <div>
                         {user && (
@@ -655,6 +703,16 @@ function Appointments({ user }) {
                           <div><strong>Vozilo:</strong> {p.voziloInfo}</div>
                           <div><strong>Vlasnik:</strong> {p.vlasnikInfo}</div>
                           <div><strong>Status:</strong> {p.status}</div>
+                          {p.kvarovi && p.kvarovi.length > 0 && (
+                            <div className="mt-2">
+                              <strong>Kvarovi:</strong>
+                              <ul className="mb-0 ms-3">
+                                {p.kvarovi.map(kv => (
+                                  <li key={kv.id_kvar}>{kv.naziv} {kv.opis && `- ${kv.opis}`}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                         <div>
                           <button className="btn btn-sm btn-outline-primary" onClick={()=>openEdit(p)}>Uredi podatke vlasnika</button>

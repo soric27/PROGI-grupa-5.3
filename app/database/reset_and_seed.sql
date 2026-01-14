@@ -11,6 +11,8 @@
 -- Run in a fresh connection (some DDL forces commits) and wrap manual steps in a transaction if desired.
 
 -- DROP all application tables (reverse dependencies)
+DROP TABLE IF EXISTS prijava_kvar CASCADE;
+DROP TABLE IF EXISTS kvar CASCADE;
 DROP TABLE IF EXISTS rezervacija_zamjene CASCADE;
 DROP TABLE IF EXISTS obrazac CASCADE;
 DROP TABLE IF EXISTS napomena_servisera CASCADE;
@@ -96,6 +98,18 @@ CREATE TABLE zamjena_vozilo (
     id_model INT REFERENCES model(id_model) ON DELETE RESTRICT,
     registracija VARCHAR(20) UNIQUE NOT NULL,
     dostupno BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE kvar (
+    id_kvar SERIAL PRIMARY KEY,
+    naziv VARCHAR(100) NOT NULL UNIQUE,
+    opis TEXT
+);
+
+CREATE TABLE prijava_kvar (
+    id_prijava INT REFERENCES prijava_servisa(id_prijava) ON DELETE CASCADE,
+    id_kvar INT REFERENCES kvar(id_kvar) ON DELETE CASCADE,
+    PRIMARY KEY (id_prijava, id_kvar)
 );
 
 CREATE TABLE rezervacija_zamjene (
@@ -227,7 +241,17 @@ INSERT INTO serviser (id_osoba, je_li_voditelj)
 INSERT INTO serviser (id_osoba, je_li_voditelj)
   SELECT o.id_osoba, false FROM osoba o WHERE o.email = 'ana.serviser@example.com' AND NOT EXISTS (SELECT 1 FROM serviser s WHERE s.id_osoba = o.id_osoba);
 
--- Create terms (9:00..16:00 for next 7 days) for every serviser
+-- Seed common defects
+INSERT INTO kvar (naziv, opis) VALUES
+('Pokvarena svjetla', 'Glavna ili pozadinska svjetla nisu u funkciji'),
+('Ne radi kočnica', 'Kočnični sustav nije u funkciji ili je neispravan'),
+('Razbiven prozor', 'Staklo prozora je oštećeno ili razbijeno'),
+('Problem s motorom', 'Motor ne radi kako treba ili ima čudne zvukove'),
+('Istrošeni gumovi', 'Gumovi su istrošeni ili imaju pukotine'),
+('Neispravan alarm', 'Alarm je neispravan ili ne funkcionira'),
+('Odljev vode', 'Voda procuri unutar vozila'),
+('Neispravan alternator', 'Alternator ne puni bateriju kako treba')
+ON CONFLICT (naziv) DO NOTHING;
 DO $$
 DECLARE
   d date := current_date;

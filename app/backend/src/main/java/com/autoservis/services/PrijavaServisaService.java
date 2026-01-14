@@ -9,18 +9,20 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autoservis.interfaces.dto.NapomenaCreateDto;
 import com.autoservis.interfaces.dto.PrijavaDetalleDto;
 import com.autoservis.interfaces.dto.PrijavaServisaCreateDto;
+import com.autoservis.models.Kvar;
 import com.autoservis.models.NapomenaServisera;
 import com.autoservis.models.PrijavaServisa;
-import com.autoservis.models.Serviser;           // ← DODAJ OVU LINIJU
+import com.autoservis.models.Serviser;
 import com.autoservis.models.Termin;
 import com.autoservis.models.Vozilo;
+import com.autoservis.repositories.KvarRepository;
 import com.autoservis.repositories.NapomenaServiseraRepository;
 import com.autoservis.repositories.OsobaRepository;
 import com.autoservis.repositories.PrijavaServisaRepository;
 import com.autoservis.repositories.ServiserRepository;
 import com.autoservis.repositories.TerminRepository;
 import com.autoservis.repositories.VoziloRepository;
-import com.autoservis.shared.PrijavaServisaMapper; 
+import com.autoservis.shared.PrijavaServisaMapper;
 
 
 @Service
@@ -33,8 +35,9 @@ public class PrijavaServisaService {
     private final NapomenaServiseraRepository napomeneRepo;
     private final OsobaRepository osobeRepo;
     private final ZamjenaService zamjenaService;
+    private final KvarRepository kvarRepository;
 
-    public PrijavaServisaService(PrijavaServisaRepository prijave, VoziloRepository vozila, ServiserRepository serviseri, TerminRepository termini, NapomenaServiseraRepository n, OsobaRepository osobeRepo, ZamjenaService zamjenaService) {
+    public PrijavaServisaService(PrijavaServisaRepository prijave, VoziloRepository vozila, ServiserRepository serviseri, TerminRepository termini, NapomenaServiseraRepository n, OsobaRepository osobeRepo, ZamjenaService zamjenaService, KvarRepository kvarRepository) {
         this.prijave = prijave;
         this.vozila = vozila;
         this.serviseri = serviseri;
@@ -42,6 +45,7 @@ public class PrijavaServisaService {
         this.napomeneRepo = n;
         this.osobeRepo = osobeRepo;
         this.zamjenaService = zamjenaService;
+        this.kvarRepository = kvarRepository;
     }
 
     @Transactional
@@ -90,6 +94,13 @@ public class PrijavaServisaService {
         PrijavaServisa novaPrijava = new PrijavaServisa(
                 vozilo, serviser, termin, dto.napomenaVlasnika()
         );
+        
+        // Dodaj odabrane kvarove ako su proslijeđeni
+        if (dto.idKvarovi() != null && !dto.idKvarovi().isEmpty()) {
+            java.util.List<Kvar> kvarovi = kvarRepository.findAllById(dto.idKvarovi());
+            novaPrijava.setKvarovi(kvarovi);
+        }
+        
         prijave.save(novaPrijava);
 
         // If user requested a replacement vehicle at creation, try to reserve it
@@ -130,6 +141,13 @@ public class PrijavaServisaService {
         PrijavaServisa novaPrijava = new PrijavaServisa(
                 vozilo, serviser, termin, dto.napomenaVlasnika()
         );
+        
+        // Dodaj odabrane kvarove ako su proslijeđeni
+        if (dto.idKvarovi() != null && !dto.idKvarovi().isEmpty()) {
+            java.util.List<Kvar> kvarovi = kvarRepository.findAllById(dto.idKvarovi());
+            novaPrijava.setKvarovi(kvarovi);
+        }
+        
         prijave.save(novaPrijava);
 
         com.autoservis.models.RezervacijaZamjene rez = null;

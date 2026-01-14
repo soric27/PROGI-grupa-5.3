@@ -1,6 +1,7 @@
 package com.autoservis.interfaces.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import jakarta.validation.constraints.NotNull;
 
@@ -12,5 +13,6 @@ public record PrijavaServisaCreateDto(
     String napomenaVlasnika,
     Long idZamjena,
     LocalDate datumOd,
-    LocalDate datumDo
+    LocalDate datumDo,
+    List<Long> idKvarovi
 ) {}
