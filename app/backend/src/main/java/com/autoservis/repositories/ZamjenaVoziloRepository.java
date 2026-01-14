@@ -1,12 +1,14 @@
 package com.autoservis.repositories;
 
-import com.autoservis.models.ZamjenaVozilo;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.autoservis.models.ZamjenaVozilo;
 
 @Repository
 public interface ZamjenaVoziloRepository extends JpaRepository<ZamjenaVozilo, Long> {
   List<ZamjenaVozilo> findByDostupnoTrue();
+  boolean existsByRegistracijaIgnoreCase(String registracija);
 }

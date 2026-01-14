@@ -63,15 +63,18 @@ public class ZamjenaController {
     boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
     if (!isAdmin) return ResponseEntity.status(403).body("Samo administrator može dodavati zamjenska vozila.");
     try {
+      String registracija = dto.registracija == null ? "" : dto.registracija.trim();
+      if (registracija.isEmpty()) return ResponseEntity.badRequest().body("Registracija je obavezna");
+      if (zamjenaRepo.existsByRegistracijaIgnoreCase(registracija)) return ResponseEntity.status(409).body("Registracija već postoji");
       com.autoservis.models.Model m = modelRepo.findById(dto.idModel).orElseThrow(() -> new IllegalArgumentException("Model nije pronađen"));
-      ZamjenaVozilo z = new ZamjenaVozilo(m, dto.registracija);
+      ZamjenaVozilo z = new ZamjenaVozilo(m, registracija);
       if (dto.dostupno != null) z.setDostupno(dto.dostupno);
       z = zamjenaRepo.save(z);
       return ResponseEntity.ok(z);
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());
     } catch (DataIntegrityViolationException e) {
-      // likely unique constraint on registracija violated
+      // fallback: unique constraint on registracija violated
       return ResponseEntity.status(409).body("Registracija već postoji");
     }
   }

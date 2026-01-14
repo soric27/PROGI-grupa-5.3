@@ -36,7 +36,7 @@ CREATE TABLE osoba (
     ),
     telefon VARCHAR(20) CHECK (telefon ~ '^\+?[0-9\s]+$'),
     uloga VARCHAR(50) NOT NULL DEFAULT 'korisnik' CHECK (uloga IN ('korisnik', 'serviser', 'administrator')),
-    oauth_id VARCHAR(255) UNIQUE NOT NULL
+    oauth_id VARCHAR(255) UNIQUE
 );
 
 CREATE TABLE marka (
