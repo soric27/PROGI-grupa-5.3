@@ -550,6 +550,16 @@ function Appointments({ user }) {
                         <div className="mt-2"><strong>Napomena vlasnika:</strong> {p.napomenaVlasnika || <span className="text-muted">-</span>}</div>
                         <div><strong>Napomena servisera:</strong> {p.napomeneServisera && p.napomeneServisera.length ? p.napomeneServisera[0].opis : <span className="text-muted">-</span>}</div>
                         <div className="mt-1"><strong>Zamjensko vozilo:</strong> {p.rezervacijaZamjene ? `${p.rezervacijaZamjene.registracija} (${p.rezervacijaZamjene.datumOd} — ${p.rezervacijaZamjene.datumDo})` : <span className="text-muted">-</span>}</div>
+                        {p.kvarovi && p.kvarovi.length > 0 && (
+                          <div className="mt-2">
+                            <strong>Kvarovi:</strong>
+                            <ul className="mb-0 ms-3">
+                              {p.kvarovi.map(kv => (
+                                <li key={kv.id_kvar}>{kv.naziv} {kv.opis && `- ${kv.opis}`}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                       <div className="d-flex gap-2">
                         {/* Serviser can postpone term, change status, add note */}
