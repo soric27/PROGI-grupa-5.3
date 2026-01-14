@@ -61,7 +61,7 @@ public class ZamjenaController {
   @GetMapping
   public ResponseEntity<?> listAvailable(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-    List<ZamjenaVozilo> list = zamjenaService.listAvailable(from, to);
+    java.util.List<com.autoservis.interfaces.http.zamjena.ZamjenaDto> list = zamjenaService.listAvailable(from, to);
     return ResponseEntity.ok(list);
   }
 
@@ -98,7 +98,13 @@ public class ZamjenaController {
       ZamjenaVozilo z = new ZamjenaVozilo(m, registracija);
       if (dto.dostupno != null) z.setDostupno(dto.dostupno);
       z = zamjenaRepo.save(z);
-      return ResponseEntity.ok(z);
+
+      // map to DTO to avoid lazy serialization issues
+      Long idModel = z.getModel() != null ? z.getModel().getIdModel() : null;
+      String modelNaziv = z.getModel() != null ? z.getModel().getNaziv() : null;
+      String markaNaziv = (z.getModel() != null && z.getModel().getMarka() != null) ? z.getModel().getMarka().getNaziv() : null;
+      com.autoservis.interfaces.http.zamjena.ZamjenaDto dtoOut = new com.autoservis.interfaces.http.zamjena.ZamjenaDto(z.getIdZamjena(), idModel, z.getRegistracija(), z.getDostupno(), modelNaziv, markaNaziv);
+      return ResponseEntity.ok(dtoOut);
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());
     } catch (DataIntegrityViolationException e) {

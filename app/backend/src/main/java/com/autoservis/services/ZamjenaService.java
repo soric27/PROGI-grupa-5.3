@@ -32,27 +32,41 @@ public class ZamjenaService {
   }
 
   @Transactional(readOnly = true)
-  public List<ZamjenaVozilo> listAvailable(LocalDate from, LocalDate to) {
-    // if no range provided, return all marked as dostupno (ensure model is initialized)
+  public java.util.List<com.autoservis.interfaces.http.zamjena.ZamjenaDto> listAvailable(LocalDate from, LocalDate to) {
+    java.util.List<ZamjenaVozilo> list;
+    // if no range provided, return all marked as dostupno
     if (from == null || to == null) {
-      List<ZamjenaVozilo> list = zamjenaRepo.findByDostupnoTrue();
-      list.forEach(z -> { if (z.getModel() != null) z.getModel().getNaziv(); });
-      return list;
+      list = zamjenaRepo.findByDostupnoTrue();
+    } else {
+      // otherwise filter those without overlapping reservations in given range and marked dostupno
+      java.util.List<ZamjenaVozilo> candidates = zamjenaRepo.findByDostupnoTrue();
+      list = candidates.stream().filter(z -> rezervacijaRepo.findOverlapping(z, from, to).isEmpty()).collect(Collectors.toList());
     }
 
-    // otherwise filter those without overlapping reservations in given range and marked dostupno
-    List<ZamjenaVozilo> candidates = zamjenaRepo.findByDostupnoTrue();
-    List<ZamjenaVozilo> filtered = candidates.stream().filter(z -> rezervacijaRepo.findOverlapping(z, from, to).isEmpty()).collect(Collectors.toList());
-    filtered.forEach(z -> { if (z.getModel() != null) z.getModel().getNaziv(); });
-    return filtered;
+    // map to DTOs while still in transaction
+    java.util.List<com.autoservis.interfaces.http.zamjena.ZamjenaDto> dtos = new java.util.ArrayList<>();
+    for (ZamjenaVozilo z : list) {
+      Long idModel = z.getModel() != null ? z.getModel().getIdModel() : null;
+      String modelNaziv = z.getModel() != null ? z.getModel().getNaziv() : null;
+      String markaNaziv = (z.getModel() != null && z.getModel().getMarka() != null) ? z.getModel().getMarka().getNaziv() : null;
+      dtos.add(new com.autoservis.interfaces.http.zamjena.ZamjenaDto(z.getIdZamjena(), idModel, z.getRegistracija(), z.getDostupno(), modelNaziv, markaNaziv));
+    }
+    return dtos;
   }
 
   // Admin helpers
   @Transactional(readOnly = true)
-  public List<ZamjenaVozilo> listAll() {
-    List<ZamjenaVozilo> list = zamjenaRepo.findAll();
-    list.forEach(z -> { if (z.getModel() != null) z.getModel().getNaziv(); });
-    return list;
+  public java.util.List<com.autoservis.interfaces.http.zamjena.ZamjenaDto> listAll() {
+    java.util.List<ZamjenaVozilo> list = zamjenaRepo.findAll();
+    // map to DTOs while still in transaction to allow lazy access
+    java.util.List<com.autoservis.interfaces.http.zamjena.ZamjenaDto> dtos = new java.util.ArrayList<>();
+    for (ZamjenaVozilo z : list) {
+      Long idModel = z.getModel() != null ? z.getModel().getIdModel() : null;
+      String modelNaziv = z.getModel() != null ? z.getModel().getNaziv() : null;
+      String markaNaziv = (z.getModel() != null && z.getModel().getMarka() != null) ? z.getModel().getMarka().getNaziv() : null;
+      dtos.add(new com.autoservis.interfaces.http.zamjena.ZamjenaDto(z.getIdZamjena(), idModel, z.getRegistracija(), z.getDostupno(), modelNaziv, markaNaziv));
+    }
+    return dtos;
   }
 
 

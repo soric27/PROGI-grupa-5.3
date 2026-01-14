@@ -110,7 +110,7 @@ function Zamjene({ user }) {
             {zamjene.map(z => (
               <tr key={z.id_zamjena}>
                 <td>{z.registracija}</td>
-                <td>{z.model?.naziv || ''}</td>
+                <td>{z.model_naziv || ''}</td>
                 <td>{z.dostupno ? 'Da' : 'Ne'}</td>
                 <td>
                   <button className="btn btn-sm btn-danger" onClick={async ()=>{
