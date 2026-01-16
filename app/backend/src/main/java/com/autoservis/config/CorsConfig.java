@@ -9,7 +9,7 @@ import java.util.List;
 
 @Configuration
 public class CorsConfig {
-  @Value("${app.frontend-url:https://progi-grupa-5-3-vnly.onrender.com}")
+  @Value("${app.frontend-url:http://localhost:3000}")
   private String frontend;
 
   @Bean

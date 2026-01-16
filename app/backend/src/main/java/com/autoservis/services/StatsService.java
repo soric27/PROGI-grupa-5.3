@@ -39,7 +39,7 @@ public class StatsService {
 
   public StatsDto gather(LocalDate from, LocalDate to) {
     if (from == null || to == null) {
-      // default to last 30 days
+    
       to = LocalDate.now();
       from = to.minusDays(30);
     }
@@ -50,12 +50,12 @@ public class StatsService {
     LocalDateTime fromDt = from.atStartOfDay();
     LocalDateTime toDt = to.plusDays(1).atStartOfDay().minusSeconds(1);
 
-    // number of received vehicles
+    
     List<PrijavaServisa> prijave = prijavaRepo.findAll();
     long prijaveCount = prijave.stream().filter(p -> p.getDatumPrijave() != null && (p.getDatumPrijave().isAfter(fromDt) || p.getDatumPrijave().isEqual(fromDt)) && (p.getDatumPrijave().isBefore(toDt) || p.getDatumPrijave().isEqual(toDt))).count();
     s.prijaveCount = prijaveCount;
 
-    // completed repairs and average duration
+    
     List<PrijavaServisa> completed = prijave.stream().filter(p -> p.getDatumPredaje() != null && p.getDatumPreuzimanja() != null && (p.getDatumPredaje().isAfter(fromDt) || p.getDatumPredaje().isEqual(fromDt)) && (p.getDatumPreuzimanja().isBefore(toDt) || p.getDatumPreuzimanja().isEqual(toDt))).toList();
     s.completedRepairsCount = completed.size();
     double avgDays = 0.0;
@@ -65,7 +65,7 @@ public class StatsService {
     }
     s.averageRepairDays = avgDays;
 
-    // replacement occupancy: calculate total reserved days in range / (rangeDays * number of vehicles)
+    
     List<ZamjenaVozilo> zamjene = zamjenaRepo.findAll();
     long rangeDays = ChronoUnit.DAYS.between(from, to) + 1;
     long totalVehicles = zamjene.size() == 0 ? 1 : zamjene.size();
@@ -81,16 +81,19 @@ public class StatsService {
       }
     }
     double occupancy = (totalReservedDays / (double)(rangeDays * totalVehicles)) * 100.0;
-    s.replacementOccupancyPercent = Math.round(occupancy * 100.0) / 100.0; // 2 decimals
+    s.replacementOccupancyPercent = Math.round(occupancy * 100.0) / 100.0;
 
-    // available slots: count of termin where zauzet=false and date within range
+  
     List<Termin> termini = terminRepo.findAll();
     List<String> availableSlots = new ArrayList<>();
     long slotsCount = 0;
     for (Termin t : termini) {
       if (t.getDatumVrijeme() != null) {
         LocalDate d = t.getDatumVrijeme().toLocalDate();
-        if ((d.isAfter(from) || d.isEqual(from)) && (d.isBefore(to) || d.isEqual(to)) && (t.getZauzet() == null || !t.getZauzet())) {
+        if ((d.isAfter(from) || d.isEqual(from)) &&
+        (d.isBefore(to) || d.isEqual(to)) &&
+        !t.isZauzet()) 
+ {
           availableSlots.add(t.getDatumVrijeme().toString());
           slotsCount++;
         }

@@ -46,13 +46,13 @@ function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 0) na mount: ako postoji token u storageu -> stavi header i pokušaj dohvatiti usera
+ 
   useEffect(() => {
     const saved = sessionStorage.getItem(TOKEN_KEY);
     if (saved) {
       setAuthHeader(saved);
       
-      // Dekoduj JWT i postavi usera
+      
       try {
         const payload = JSON.parse(atob(saved.split('.')[1]));
         setUser({
@@ -66,7 +66,7 @@ function AppRoutes() {
     }
   }, []);
 
-  // 1) obradi povratak s OAuth-a: pokupi token iz URL-a, spremi, postavi header, refetch usera, očisti URL
+  
   useEffect(() => {
     const token = readTokenFromURL(location);
 
@@ -74,7 +74,7 @@ function AppRoutes() {
       sessionStorage.setItem(TOKEN_KEY, token);
       setAuthHeader(token);
 
-      // Dekoduj JWT payload
+    
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUser({

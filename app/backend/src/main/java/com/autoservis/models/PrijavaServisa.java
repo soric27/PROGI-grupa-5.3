@@ -2,6 +2,8 @@ package com.autoservis.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "prijava_servisa")
@@ -15,7 +17,7 @@ public class PrijavaServisa {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_vozilo")
     private Vozilo vozilo;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_serviser")
     private Serviser serviser;
@@ -38,7 +40,10 @@ public class PrijavaServisa {
 
     @Column(name = "napomena_vlasnika")
     private String napomenaVlasnika;
-    
+
+    @OneToMany(mappedBy = "prijavaServisa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<NapomenaServisera> napomene = new ArrayList<>();
+
     protected PrijavaServisa() {}
 
     public PrijavaServisa(Vozilo vozilo, Serviser serviser, Termin termin, String napomenaVlasnika) {
@@ -50,19 +55,22 @@ public class PrijavaServisa {
         this.datumPrijave = LocalDateTime.now();
     }
 
-    @OneToMany(mappedBy = "prijavaServisa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<NapomenaServisera> napomene = new java.util.ArrayList<>();
-
-    // Getteri i Setteri
-    public java.util.List<NapomenaServisera> getNapomene() { return napomene; }
     public Long getIdPrijava() { return idPrijava; }
     public Vozilo getVozilo() { return vozilo; }
     public Serviser getServiser() { return serviser; }
     public Termin getTermin() { return termin; }
     public String getStatus() { return status; }
     public LocalDateTime getDatumPrijave() { return datumPrijave; }
+    public LocalDateTime getDatumPredaje() { return datumPredaje; }
+    public LocalDateTime getDatumPreuzimanja() { return datumPreuzimanja; }
     public String getNapomenaVlasnika() { return napomenaVlasnika; }
-    
+    public List<NapomenaServisera> getNapomene() { return napomene; }
+
+    public void setVozilo(Vozilo vozilo) { this.vozilo = vozilo; }
+    public void setServiser(Serviser serviser) { this.serviser = serviser; }
+    public void setTermin(Termin termin) { this.termin = termin; }
     public void setStatus(String status) { this.status = status; }
-    // ... ostali setteri po potrebi
+    public void setDatumPredaje(LocalDateTime datumPredaje) { this.datumPredaje = datumPredaje; }
+    public void setDatumPreuzimanja(LocalDateTime datumPreuzimanja) { this.datumPreuzimanja = datumPreuzimanja; }
+    public void setNapomenaVlasnika(String napomenaVlasnika) { this.napomenaVlasnika = napomenaVlasnika; }
 }

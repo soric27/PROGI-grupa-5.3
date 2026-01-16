@@ -5,32 +5,35 @@ server:
     session:
       cookie:
         same-site: lax
-        secure: true
+        secure: false   # lokalno bez https
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+
   jpa:
     hibernate:
       ddl-auto: none
     open-in-view: false
+
   security:
     oauth2:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
+            client-id: ${GOOGLE_CLIENT_ID:704342952457-8o8kjsh4lkm51b29r0gf6iikbdii5o8d.apps.googleusercontent.com}
+            
             scope:
               - openid
               - profile
               - email
-            redirect-uri: ${GOOGLE_CALLBACK_URL}
+            redirect-uri: ${GOOGLE_CALLBACK_URL:http://localhost:8080/login/oauth2/code/google}
         provider:
           google:
             issuer-uri: https://accounts.google.com
+
   mail:
     host: ${MAIL_HOST:}
     port: ${MAIL_PORT:587}
@@ -43,10 +46,12 @@ spring:
           starttls.enable: true
 
 app:
-  frontend-url: ${FRONTEND_URL}
-  jwt-secret: ${JWT_SECRET}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  jwt-secret: ${JWT_SECRET:dev-secret-please-change-32chars-min!!}
   storage:
     pdf-dir: ${PDF_STORAGE:./data/pdfs}
 
-# mail configuration moved under the main 'spring' block to avoid duplication
-# configure via environment variables: MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD
+
+logging:
+  level:
+    org.springframework.security: DEBUG

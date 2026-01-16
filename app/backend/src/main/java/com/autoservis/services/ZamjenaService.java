@@ -10,6 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.autoservis.models.Model;
+import com.autoservis.repositories.ModelRepository;
+
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,18 +26,25 @@ public class ZamjenaService {
   private final ZamjenaVoziloRepository zamjenaRepo;
   private final RezervacijaZamjeneRepository rezervacijaRepo;
   private final PrijavaServisaRepository prijavaRepo;
+  private final ModelRepository modelRepo;
 
-  public ZamjenaService(ZamjenaVoziloRepository zamjenaRepo, RezervacijaZamjeneRepository rezervacijaRepo, PrijavaServisaRepository prijavaRepo) {
-    this.zamjenaRepo = zamjenaRepo;
-    this.rezervacijaRepo = rezervacijaRepo;
-    this.prijavaRepo = prijavaRepo;
-  }
+
+  public ZamjenaService(ZamjenaVoziloRepository zamjenaRepo,
+                RezervacijaZamjeneRepository rezervacijaRepo,
+                PrijavaServisaRepository prijavaRepo,
+                ModelRepository modelRepo) {
+                this.zamjenaRepo = zamjenaRepo;
+                this.rezervacijaRepo = rezervacijaRepo;
+                this.prijavaRepo = prijavaRepo;
+                this.modelRepo = modelRepo;
+}
+
 
   public List<ZamjenaVozilo> listAvailable(LocalDate from, LocalDate to) {
-    // if no range provided, return all marked as dostupno
+    
     if (from == null || to == null) return zamjenaRepo.findByDostupnoTrue();
 
-    // otherwise filter those without overlapping reservations in given range and marked dostupno
+    
     List<ZamjenaVozilo> candidates = zamjenaRepo.findByDostupnoTrue();
     return candidates.stream().filter(z -> rezervacijaRepo.findOverlapping(z, from, to).isEmpty()).collect(Collectors.toList());
   }
@@ -46,22 +56,30 @@ public class ZamjenaService {
     PrijavaServisa prijava = prijavaRepo.findById(idPrijava).orElseThrow(() -> new IllegalArgumentException("Prijava not found"));
     ZamjenaVozilo zamjena = zamjenaRepo.findById(idZamjena).orElseThrow(() -> new IllegalArgumentException("Zamjena not found"));
 
-    // check availability flag
+    
     if (zamjena.getDostupno() == null || !zamjena.getDostupno()) throw new IllegalStateException("Zamjensko vozilo nije dostupno");
 
-    // check overlapping reservations
+    
     if (!rezervacijaRepo.findOverlapping(zamjena, from, to).isEmpty()) throw new IllegalStateException("Zamjensko vozilo već je rezervirano u tom periodu");
 
     RezervacijaZamjene rez = new RezervacijaZamjene(prijava, zamjena, from, to);
     rez = rezervacijaRepo.save(rez);
 
-    // mark the replacement vehicle as unavailable immediately
+   
     zamjena.setDostupno(false);
     zamjenaRepo.save(zamjena);
 
     logger.info("Created reservation {} for zamjena {} and prijava {}; marked zamjena as unavailable", rez.getIdRezervacija(), zamjena.getIdZamjena(), prijava.getIdPrijava());
 
     return rez;
+  }
+
+  @Transactional
+  public ZamjenaVozilo create(Long idModel, String registracija) {
+    if (idModel == null || registracija == null || registracija.isBlank()) throw new IllegalArgumentException("Invalid input");
+    Model model = modelRepo.findById(idModel).orElseThrow(() -> new IllegalArgumentException("Model not found"));
+    ZamjenaVozilo z = new ZamjenaVozilo(model, registracija);
+    return zamjenaRepo.save(z);
   }
 
   public List<RezervacijaZamjene> getReservationsForPrijava(Long idPrijava) {
@@ -73,11 +91,11 @@ public class ZamjenaService {
     RezervacijaZamjene rez = rezervacijaRepo.findById(idRezervacija).orElseThrow(() -> new IllegalArgumentException("Rezervacija not found"));
     ZamjenaVozilo zamjena = rez.getZamjena();
 
-    // mark vehicle available
+    
     zamjena.setDostupno(true);
     zamjenaRepo.save(zamjena);
 
-    // delete reservation as it's finished
+    
     rezervacijaRepo.delete(rez);
 
     logger.info("Returned zamjena {} and removed reservation {}", zamjena.getIdZamjena(), rez.getIdRezervacija());

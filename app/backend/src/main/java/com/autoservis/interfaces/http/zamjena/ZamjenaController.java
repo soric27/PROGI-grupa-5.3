@@ -34,6 +34,21 @@ public class ZamjenaController {
     public LocalDate datumDo;
   }
 
+  public static class CreateDto {
+    public Long idModel;
+    public String registracija;
+  }
+
+  @PostMapping
+  public ResponseEntity<?> create(@RequestBody CreateDto dto) {
+    try {
+      ZamjenaVozilo z = zamjenaService.create(dto.idModel, dto.registracija);
+      return ResponseEntity.ok(z);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    }
+  }
+
   @PostMapping("/rezervacije")
   public ResponseEntity<?> reserve(@RequestBody ReserveDto dto) {
     try {

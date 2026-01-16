@@ -3,6 +3,8 @@ package com.autoservis.interfaces.http.prijava;
 import com.autoservis.models.PrijavaServisa;
 import com.autoservis.models.Termin;
 import com.autoservis.models.Vozilo;
+import com.autoservis.models.Serviser;
+import com.autoservis.repositories.ServiserRepository;
 import com.autoservis.repositories.VoziloRepository;
 import com.autoservis.services.PdfService;
 import com.autoservis.services.PrijavaService;
@@ -22,6 +24,8 @@ public class PrijavaController {
 
   @Autowired
   private PrijavaService prijavaService;
+  @Autowired
+  private ServiserRepository serviserRepository;
 
   @Autowired
   private VoziloRepository voziloRepository;
@@ -45,9 +49,14 @@ public class PrijavaController {
     Termin termin = null;
     if (dto.terminDatum != null) termin = new Termin(dto.terminDatum);
 
-    PrijavaServisa prijava = new PrijavaServisa(v.get(), dto.idServiser, termin, dto.napomenaVlasnika);
+    Optional<Serviser> s = serviserRepository.findById(dto.idServiser);
+    if (s.isEmpty()) return ResponseEntity.badRequest().body("Serviser nije pronađen");
 
-    // if termin was created, it needs to be saved via PrijavaService which will create a termin entity
+
+    PrijavaServisa prijava = new PrijavaServisa(v.get(), s.get(), termin, dto.napomenaVlasnika);
+
+
+    
     PrijavaServisa saved = prijavaService.createPrijava(prijava);
 
     return ResponseEntity.ok(saved);
@@ -60,7 +69,7 @@ public class PrijavaController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<?> update(@PathVariable Long id, @RequestBody UpdatePrijavaDto dto) throws IOException, MessagingException {
+  public ResponseEntity<?> update(@PathVariable Long id, @RequestBody UpdatePrijavaDto dto) {
     Optional<PrijavaServisa> updated = prijavaService.updatePrijava(id, dto.newTerminDatum, dto.status);
     return updated.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
   }

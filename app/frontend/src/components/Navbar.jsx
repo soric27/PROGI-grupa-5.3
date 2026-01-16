@@ -19,7 +19,7 @@ function Navbar({ user }) {
     try {
       sessionStorage.removeItem(TOKEN_KEY);
     } catch {}
-    // hard refresh da se sve očisti
+    
     window.location.href = "/";
   };
 
@@ -32,7 +32,7 @@ function Navbar({ user }) {
             Auto Servis
           </Link>
 
-          {/* HAMBURGER BUTTON - prikazuje se samo na mobitelu */}
+          {}
           <button 
             className="navbar-toggler" 
             type="button" 
@@ -100,14 +100,14 @@ function Navbar({ user }) {
         </div>
       </nav>
 
-      {/* Login overlay - OVDJE JE TVOJ GOOGLE LOGIN LINK */}
+      {/* Login overlay - OVDJE JE GOOGLE LOGIN LINK */}
       {showLogin && !user && (
         <div className="login-overlay bg-secondary bg-opacity-25 py-5">
           <div className="login-box bg-light p-4 text-dark rounded shadow">
             <h5 className="text-center mb-3">Prijava korisnika</h5>
             <div className="text-center">
               <a
-                href="https://autoservis-java.onrender.com/oauth2/authorization/google"
+                href="http://localhost:8080/oauth2/authorization/google"
                 className="btn btn-danger btn-lg"
                 onClick={() => setShowLogin(false)}
               >

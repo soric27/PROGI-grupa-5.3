@@ -32,15 +32,10 @@ public class EmailService {
       FileSystemResource file = new FileSystemResource(attachment);
       helper.addAttachment(attachment.getName(), file);
     }
+    logger.info("Sending email to {} with subject {}", to, subject);
+    mailSender.send(message);
+    logger.info("Email sent to {}", to);
 
-    try {
-      logger.info("Sending email to {} with subject {}", to, subject);
-      mailSender.send(message);
-      logger.info("Email sent to {}", to);
-    } catch (MessagingException ex) {
-      logger.error("Failed to send email to {}", to, ex);
-      throw ex;
-    }
   }
 
   public void sendSimple(String to, String subject, String text) throws MessagingException {
