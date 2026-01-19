@@ -26,10 +26,10 @@ public class ServisController {
     public ServisInfoDto get() {
         List<ServisInfo> all = repo.findAll();
         if (all.isEmpty()) {
-            return new ServisInfoDto("info@autoservis.hr", "+38512345678", "Auto Servis MK2 - najbolji servisi u gradu. ");
+            return new ServisInfoDto("info@autoservis.hr", "+38512345678", "Auto Servis MK2 - najbolji servisi u gradu. ", 45.815399, 15.966568);
         }
         ServisInfo s = all.get(0);
-        return new ServisInfoDto(s.getContactEmail(), s.getContactPhone(), s.getAboutText());
+        return new ServisInfoDto(s.getContactEmail(), s.getContactPhone(), s.getAboutText(), s.getLatitude(), s.getLongitude());
     }
 
     @PostMapping
@@ -38,14 +38,16 @@ public class ServisController {
         List<ServisInfo> all = repo.findAll();
         ServisInfo s;
         if (all.isEmpty()) {
-            s = new ServisInfo(dto.contactEmail(), dto.contactPhone(), dto.aboutText());
+            s = new ServisInfo(dto.contactEmail(), dto.contactPhone(), dto.aboutText(), dto.latitude(), dto.longitude());
         } else {
             s = all.get(0);
             s.setContactEmail(dto.contactEmail());
             s.setContactPhone(dto.contactPhone());
             s.setAboutText(dto.aboutText());
+            s.setLatitude(dto.latitude());
+            s.setLongitude(dto.longitude());
         }
         repo.save(s);
-        return ResponseEntity.ok(new ServisInfoDto(s.getContactEmail(), s.getContactPhone(), s.getAboutText()));
+        return ResponseEntity.ok(new ServisInfoDto(s.getContactEmail(), s.getContactPhone(), s.getAboutText(), s.getLatitude(), s.getLongitude()));
     }
 }

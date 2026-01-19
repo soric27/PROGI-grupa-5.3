@@ -23,20 +23,32 @@ public class ServisInfo {
     @Column(name = "about_text", columnDefinition = "TEXT")
     private String aboutText;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     protected ServisInfo() {}
 
-    public ServisInfo(String contactEmail, String contactPhone, String aboutText) {
+    public ServisInfo(String contactEmail, String contactPhone, String aboutText, Double latitude, Double longitude) {
         this.contactEmail = contactEmail;
         this.contactPhone = contactPhone;
         this.aboutText = aboutText;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public Long getId() { return id; }
     public String getContactEmail() { return contactEmail; }
     public String getContactPhone() { return contactPhone; }
     public String getAboutText() { return aboutText; }
+    public Double getLatitude() { return latitude; }
+    public Double getLongitude() { return longitude; }
 
     public void setContactEmail(String contactEmail) { this.contactEmail = contactEmail; }
     public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
     public void setAboutText(String aboutText) { this.aboutText = aboutText; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 }

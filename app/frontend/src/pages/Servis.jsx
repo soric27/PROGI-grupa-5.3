@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 
 function Servis({ user }) {
-  const [info, setInfo] = useState({ contactEmail: '', contactPhone: '', aboutText: '' });
+  const [info, setInfo] = useState({ contactEmail: '', contactPhone: '', aboutText: '', latitude: 45.815399, longitude: 15.966568 });
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(info);
   const [msg, setMsg] = useState('');
   const [msgType, setMsgType] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const containerStyle = {
+    width: '100%',
+    height: '400px'
+  };
 
   useEffect(() => {
     axios.get('/api/servis').then(r => setInfo(r.data)).catch(e => console.error(e));
@@ -15,11 +21,33 @@ function Servis({ user }) {
 
   useEffect(() => setForm(info), [info]);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    // Za latitude i longitude, konvertuj u broj
+    const newValue = (name === 'latitude' || name === 'longitude') ? parseFloat(value) || '' : value;
+    setForm({ ...form, [name]: newValue });
+  };
+
+  const handleMapClick = (e) => {
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    setForm({ ...form, latitude: lat, longitude: lng });
+    setMsg('Lokacija odabrana');
+    setMsgType('info');
+    setTimeout(() => setMsg(''), 3000);
+  };
 
   const save = async () => {
     setMsg('');
     setMsgType('');
+    
+    // Validacija
+    if (!form.latitude || !form.longitude) {
+      setMsg('Trebate odabrati lokaciju na mapi');
+      setMsgType('error');
+      return;
+    }
+
     setSaving(true);
     try {
       const token = sessionStorage.getItem('auth_token');
@@ -72,8 +100,53 @@ function Servis({ user }) {
             <textarea name="aboutText" value={form.aboutText} onChange={handleChange} className="form-control" rows={6} />
           </div>
 
+          <div className="mb-3">
+            <label className="form-label">Lokacija servisa</label>
+            <p className="text-muted small">Kliknite na mapu da odaberete lokaciju</p>
+            <div className="mb-2">
+              <LoadScript googleMapsApiKey="AIzaSyBh9aZMalJ5ooDAfHUGYCmxH3lpfIgt5qk">
+                <GoogleMap
+                  mapContainerStyle={containerStyle}
+                  center={{ lat: form.latitude || 45.815399, lng: form.longitude || 15.966568 }}
+                  zoom={13}
+                  onClick={handleMapClick}
+                >
+                  {form.latitude && form.longitude && (
+                    <Marker position={{ lat: form.latitude, lng: form.longitude }} />
+                  )}
+                </GoogleMap>
+              </LoadScript>
+            </div>
+            <div className="row">
+              <div className="col-md-6 mb-2">
+                <label className="form-label">Geografska širina (Latitude)</label>
+                <input 
+                  type="number" 
+                  name="latitude" 
+                  value={form.latitude || ''} 
+                  onChange={handleChange} 
+                  className="form-control"
+                  step="0.000001"
+                  placeholder="45.815399"
+                />
+              </div>
+              <div className="col-md-6 mb-2">
+                <label className="form-label">Geografska dužina (Longitude)</label>
+                <input 
+                  type="number" 
+                  name="longitude" 
+                  value={form.longitude || ''} 
+                  onChange={handleChange} 
+                  className="form-control"
+                  step="0.000001"
+                  placeholder="15.966568"
+                />
+              </div>
+            </div>
+          </div>
+
           <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Spremanje...' : 'Spremi'}</button>
-          <span className={`ms-3 ${msgType === 'success' ? 'text-success' : msgType === 'error' ? 'text-danger' : ''}`}>{msg}</span>
+          <span className={`ms-3 ${msgType === 'success' ? 'text-success' : msgType === 'error' ? 'text-danger' : msgType === 'info' ? 'text-info' : ''}`}>{msg}</span>
         </div>
       )}
     </div>

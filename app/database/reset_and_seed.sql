@@ -147,12 +147,14 @@ CREATE TABLE servis_info (
     id SERIAL PRIMARY KEY,
     contact_email VARCHAR(100),
     contact_phone VARCHAR(50),
-    about_text TEXT
+    about_text TEXT,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8)
 );
 
 -- Seed a default servis_info row (idempotent)
-INSERT INTO servis_info (contact_email, contact_phone, about_text)
-SELECT 'info@autoservis.hr', '+38512345678', 'Auto Servis MK2 - najbolji servisi u gradu.'
+INSERT INTO servis_info (contact_email, contact_phone, about_text, latitude, longitude)
+SELECT 'info@autoservis.hr', '+38512345678', 'Auto Servis MK2 - najbolji servisi u gradu.', 45.815399, 15.966568
 WHERE NOT EXISTS (SELECT 1 FROM servis_info);
 
 -- === Seed data ===
