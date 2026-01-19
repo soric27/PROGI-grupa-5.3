@@ -61,7 +61,7 @@ function RoleSelection() {
             onClick={() => handleSelectRole("korisnik")}
             disabled={loading}
           >
-            {loading ? "Učitavanje..." : "👤 Obični korisnik"}
+            {loading ? "Učitavanje..." : "Obični korisnik"}
           </button>
 
           <button
@@ -69,7 +69,7 @@ function RoleSelection() {
             onClick={() => handleSelectRole("serviser")}
             disabled={loading}
           >
-            {loading ? "Učitavanje..." : "🔧 Serviser"}
+            {loading ? "Učitavanje..." : "Serviser"}
           </button>
 
           <button
@@ -77,12 +77,12 @@ function RoleSelection() {
             onClick={() => handleSelectRole("administrator")}
             disabled={loading}
           >
-            {loading ? "Učitavanje..." : "👨‍💼 Administrator"}
+            {loading ? "Učitavanje..." : "Administrator"}
           </button>
         </div>
 
         <p className="text-center text-muted mt-4 small">
-          Ova ulogu možete promijeniti kasnije u postavkama.
+          Ovu ulogu možete promijeniti kasnije u postavkama.
         </p>
       </div>
     </div>

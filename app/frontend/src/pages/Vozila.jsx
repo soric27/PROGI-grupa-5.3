@@ -34,71 +34,51 @@ function Vozila({ user }) {
 
   // modeli odredjene marke
   useEffect(() => {
-  if (novoVozilo.id_marka) {
-    console.log("🔍 Dohvaćam modele za marku ID:", novoVozilo.id_marka);  // ← NOVA LINIJA
-    
-    axios
-      .get(`/api/modeli/${novoVozilo.id_marka}`)
-      .then((res) => {
-        console.log("✅ Modeli primljeni:", res.data);  // ← NOVA LINIJA
-        setModeli(res.data);
-      })
-      .catch((err) => console.error("❌ Greška pri dohvaćanju modela:", err));
-  } else {
-    setModeli([]);
-  }
-}, [novoVozilo.id_marka]);
-
-useEffect(() => {
-  console.log("Primljeni modeli:", modeli);
-}, [modeli]);
+    if (novoVozilo.id_marka) {
+      axios
+        .get(`/api/modeli/${novoVozilo.id_marka}`)
+        .then((res) => setModeli(res.data))
+        .catch((err) => console.error("Greška pri dohvaćanju modela:", err));
+    } else {
+      setModeli([]);
+    }
+  }, [novoVozilo.id_marka]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNovoVozilo({ ...novoVozilo, [name]: value });
-  };
+    const { name, value } = e.target;
+    setNovoVozilo({ ...novoVozilo, [name]: value });
+  };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    try {
+      await axios.post(
+        "/api/vehicles",
+        {
+          id_model: Number(novoVozilo.id_model),
+          registracija: novoVozilo.registracija,
+          godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
+        },
+        { withCredentials: true }
+      );
 
+      const response = await axios.get("/api/vehicles", {
+        withCredentials: true,
+      });
+      setVozila(response.data);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  console.log("Šaljem vozilo: ", novoVozilo);
-  console.log("Šaljem:", {
-  id_model: Number(novoVozilo.id_model),
-  registracija: novoVozilo.registracija,
-  godina_proizvodnje: Number(novoVozilo.godina_proizvodnje)
-});
-
-  try {
-    await axios.post(
-      
-      
-      "/api/vehicles",
-      {
-        id_model: Number(novoVozilo.id_model),
-        registracija: novoVozilo.registracija,
-        godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
-      },
-      { withCredentials: true }
-    );
-
-    const response = await axios.get("/api/vehicles", {
-      withCredentials: true,
-    });
-    setVozila(response.data);
-
-    setNovoVozilo({
-      id_marka: "",
-      id_model: "",
-      registracija: "",
-      godina_proizvodnje: "",
-    });
-    setShowForm(false);
-  } catch (err) {
-    console.error("Greška pri dodavanju vozila:", err);
-  }
-};
+      setNovoVozilo({
+        id_marka: "",
+        id_model: "",
+        registracija: "",
+        godina_proizvodnje: "",
+      });
+      setShowForm(false);
+    } catch (err) {
+      console.error("Greška pri dodavanju vozila:", err);
+    }
+  };
 
   if (!user) {
     return (

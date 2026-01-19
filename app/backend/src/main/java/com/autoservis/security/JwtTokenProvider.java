@@ -39,6 +39,6 @@ public class JwtTokenProvider {
             .claim("uloga", osoba.getUloga())
             .build();
 
-        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();  // ← PROMIJENI OVU LINIJU
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 }

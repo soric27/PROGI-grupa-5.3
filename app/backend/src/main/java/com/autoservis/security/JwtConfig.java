@@ -31,7 +31,6 @@ public class JwtConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        System.out.println("JWT Secret loaded: " + jwtSecret);
         SecretKey key = new SecretKeySpec(
             jwtSecret.getBytes(StandardCharsets.UTF_8), 
             "HmacSHA256"

@@ -11,7 +11,7 @@ import com.autoservis.interfaces.dto.PrijavaDetalleDto;
 import com.autoservis.interfaces.dto.PrijavaServisaCreateDto;
 import com.autoservis.models.NapomenaServisera;
 import com.autoservis.models.PrijavaServisa;
-import com.autoservis.models.Serviser;           // ← DODAJ OVU LINIJU
+import com.autoservis.models.Serviser;
 import com.autoservis.models.Termin;
 import com.autoservis.models.Vozilo;
 import com.autoservis.repositories.NapomenaServiseraRepository;

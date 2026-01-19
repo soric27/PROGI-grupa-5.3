@@ -35,6 +35,11 @@ public class RoleSelectionController {
 
         // Dohvati korisnika iz baze
         Long idOsoba = jwt.getClaim("id_osoba");
+        if (idOsoba == null) {
+            return ResponseEntity.status(401).body(
+                new ErrorResponse("Nevažeći token. Prijavite se ponovno.")
+            );
+        }
         Osoba osoba = osobaRepository.findById(idOsoba)
             .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
 

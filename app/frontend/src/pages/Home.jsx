@@ -10,7 +10,7 @@ function Home() {
         <div className="hero-content">
           <h1 className="display-4 fw-bold text-light">Dobrodošli u Auto Servis</h1>
           <p className="lead text-light mb-4">
-            Digitalna prijava vozila i praćenje statusa popravka — brzo, jednostavno i moderno.
+            Digitalna prijava vozila i praćenje statusa popravka - brzo, jednostavno i moderno.
           </p>
           <Link to="/vozila" className="btn btn-primary btn-lg">
             Prijavi vozilo
@@ -28,7 +28,7 @@ function Home() {
           <br /><br />
           Vjerujemo u iskren pristup, vrhunsku uslugu i sigurnost naših klijenata. Zahvaljujući zamjenskim vozilima i digitalnom praćenju, nikada ne ostajete bez prijevoza ili informacija.
           <br /><br />
-          Vaše povjerenje nam je na prvom mjestu — dobrodošli u servis gdje se vozila popravljaju s osmijehom!
+          Vaše povjerenje nam je na prvom mjestu - dobrodošli u servis gdje se vozila popravljaju s osmijehom!
         </p>
       </div>
     </>
