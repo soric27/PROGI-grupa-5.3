@@ -61,6 +61,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             .claim("prezime", prez)
             .claim("email", email)
             .claim("id_osoba", idOsoba)
+            .claim("uloga", osoba.getUloga())
             .build();
 
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
