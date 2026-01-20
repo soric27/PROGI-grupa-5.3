@@ -141,6 +141,10 @@ function Appointments({ user }) {
         // refresh admin view of that user's prijave
         const r = await axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`);
         setMojePrijave(r.data);
+        // Osvježi dostupne termine nakon booking-a
+        if (selectedServiser) {
+          axios.get(`/api/appointments/termini?serviserId=${selectedServiser}`).then(r => setTermini(r.data)).catch(e => console.error(e));
+        }
         // reset form
         setIdVozilo(''); setSelectedServiser(''); setSelectedTermin(''); setNapomena(''); setSelectedKvarovi([]);
         setZamjenaRequested(false); setZamjenaOd(''); setZamjenaDo(''); setSelectedZamjenaId(''); setAvailableZamjene([]);
@@ -158,9 +162,13 @@ function Appointments({ user }) {
 
         setMessage("Prijava poslana.");
         setIdVozilo(""); setSelectedServiser(""); setSelectedTermin(""); setNapomena(""); setSelectedKvarovi([]);
-            // refresh my prijave
+        // refresh my prijave
         const r = await axios.get("/api/appointments/prijave/moje");
         setMojePrijave(r.data);
+        // Osvježi dostupne termine nakon booking-a
+        if (selectedServiser) {
+          axios.get(`/api/appointments/termini?serviserId=${selectedServiser}`).then(r => setTermini(r.data)).catch(e => console.error(e));
+        }
         // reset zamjena inputs
         setZamjenaRequested(false); setZamjenaOd(''); setZamjenaDo(''); setSelectedZamjenaId(''); setAvailableZamjene([]);
       }
@@ -223,8 +231,14 @@ function Appointments({ user }) {
       await axios.put(`/api/prijave/${id}`, { newTerminDatum: editTerminModal.selectedSlot });
       setMessage('Termin je ažuriran.');
       setEditTerminModal(null);
+      
+      // Osvježi sve relevantne liste
       const r = await axios.get("/api/appointments/prijave/dodijeljene");
       setDodijeljene(r.data);
+      
+      // Osvježi i korisniku njegovu listu ako se termin promijenio
+      const myApps = await axios.get("/api/appointments/prijave/moje");
+      setMojePrijave(myApps.data);
     } catch (err) {
       console.error(err);
       setError(err?.response?.data?.message || 'Greška pri ažuriranju termina.');

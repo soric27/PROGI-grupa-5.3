@@ -93,6 +93,8 @@ public class PrijavaController {
       return updated.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     } catch (org.springframework.security.access.AccessDeniedException e) {
       return ResponseEntity.status(403).body(Map.of("message", e.getMessage()));
+    } catch (Exception e) {
+      return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
     }
   }
 }

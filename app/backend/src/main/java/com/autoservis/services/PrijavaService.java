@@ -80,22 +80,38 @@ public class PrijavaService {
     }
 
     if (newTerminDate != null) {
+      Termin oldTerminObj = existing.getTermin();
+      
       Termin termin = null;
       // Prefer existing predefined slot for the assigned serviser if present
       if (existing.getServiser() != null) {
         java.util.Optional<Termin> existingSlot = terminRepo.findByDatumVrijemeAndServiser_IdServiser(newTerminDate, existing.getServiser().getIdServiser());
         if (existingSlot.isPresent()) {
           termin = existingSlot.get();
+          // Mark the existing slot as taken
+          if (!termin.isZauzet()) {
+            termin.setZauzet(true);
+            terminRepo.save(termin);
+          }
         } else {
           // create a new termin tied to the serviser so it shows up in the serviser's schedule
           termin = new Termin(newTerminDate, existing.getServiser());
+          termin.setZauzet(true);
           termin = terminRepo.save(termin);
         }
       } else {
         // no assigned serviser: keep behavior of creating standalone termin
         termin = new Termin(newTerminDate);
+        termin.setZauzet(true);
         termin = terminRepo.save(termin);
       }
+      
+      // Free up the old termin slot if it exists
+      if (oldTerminObj != null && !oldTerminObj.equals(termin)) {
+        oldTerminObj.setZauzet(false);
+        terminRepo.save(oldTerminObj);
+      }
+      
       existing.setTermin(termin);
     }
 
