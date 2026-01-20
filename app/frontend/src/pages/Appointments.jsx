@@ -198,12 +198,10 @@ function Appointments({ user }) {
 
   // Serviser: edit termin
   const openEditTermin = async (p) => {
-    const dt = p.datumTermina ? new Date(p.datumTermina) : null;
-    const localVal = dt ? dt.toISOString().slice(0,16) : '';
-    const modal = { idPrijava: p.idPrijava, newDatum: localVal, available: [], selectedSlot: '' };
+    const modal = { idPrijava: p.idPrijava, available: [], selectedSlot: '' };
     setMessage(""); setError("");
     try {
-      // if the DTO includes serviser id, fetch that serviser's free slots and show them as options
+      // Dohvati slobodne termine za tog servisera (isti kao što korisnik vidi)
       if (p.idServiser) {
         const r = await axios.get(`/api/appointments/termini?serviserId=${p.idServiser}`);
         modal.available = r.data;
@@ -216,11 +214,13 @@ function Appointments({ user }) {
 
   const handleEditTerminSave = async () => {
     try {
+      if (!editTerminModal.selectedSlot) {
+        setError('Molimo odaberite novi termin.');
+        return;
+      }
       const id = editTerminModal.idPrijava;
-      // newTerminDatum from input is 'YYYY-MM-DDTHH:mm' - append seconds to make ISO-complete value
-      const raw = editTerminModal.newDatum;
-      const payloadDate = raw ? (raw.length === 16 ? raw + ':00' : raw) : null;
-      await axios.put(`/api/prijave/${id}`, { newTerminDatum: payloadDate });
+      // selectedSlot je ISO datetime format
+      await axios.put(`/api/prijave/${id}`, { newTerminDatum: editTerminModal.selectedSlot });
       setMessage('Termin je ažuriran.');
       setEditTerminModal(null);
       const r = await axios.get("/api/appointments/prijave/dodijeljene");
@@ -776,23 +776,23 @@ function Appointments({ user }) {
           <div className="modal-dialog" role="document">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Uredi termin</h5>
+                <h5 className="modal-title">Odgodi termin</h5>
                 <button type="button" className="btn-close" onClick={()=>setEditTerminModal(null)} aria-label="Close"></button>
               </div>
               <div className="modal-body">
                 {error && <div className="alert alert-danger">{error}</div>}
                 <div className="mb-3">
-                  <label className="form-label">Novi termin</label>
-                  { (editTerminModal.available && editTerminModal.available.length>0) && (
-                    <select className="form-select mb-2" value={editTerminModal.selectedSlot || ''} onChange={e=>{
-                      const val = e.target.value; // ISO datetime
-                      setEditTerminModal({...editTerminModal, selectedSlot: val, newDatum: val ? val.slice(0,16) : ''});
+                  <label className="form-label">Odaberite novi termin</label>
+                  {editTerminModal.available && editTerminModal.available.length > 0 ? (
+                    <select className="form-select" value={editTerminModal.selectedSlot || ''} onChange={e=>{
+                      setEditTerminModal({...editTerminModal, selectedSlot: e.target.value});
                     }}>
                       <option value="">-- odaberite slobodan termin --</option>
                       {editTerminModal.available.map(t => <option key={t.idTermin} value={t.datumVrijeme}>{new Date(t.datumVrijeme).toLocaleString()}</option>)}
                     </select>
+                  ) : (
+                    <div className="alert alert-info">Nema dostupnih termina za odgodu.</div>
                   )}
-                  <input type="datetime-local" className="form-control" value={editTerminModal.newDatum} onChange={e=>setEditTerminModal({...editTerminModal, newDatum: e.target.value, selectedSlot: ''})} />
                 </div>
               </div>
               <div className="modal-footer">
