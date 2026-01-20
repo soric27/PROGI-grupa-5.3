@@ -2,6 +2,7 @@ package com.autoservis.models;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,14 +26,17 @@ public class PrijavaServisa {
     @Column(name = "id_prijava")
     private Long idPrijava;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_vozilo")
     private Vozilo vozilo;
     
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_serviser")
     private Serviser serviser;
 
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_termin")
     private Termin termin;
