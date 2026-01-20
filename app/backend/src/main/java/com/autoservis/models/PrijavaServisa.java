@@ -68,9 +68,11 @@ public class PrijavaServisa {
         this.datumPrijave = LocalDateTime.now();
     }
 
+    @JsonIgnore
     @OneToMany(mappedBy = "prijavaServisa", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<NapomenaServisera> napomene = new java.util.ArrayList<>();
 
+    @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @jakarta.persistence.JoinTable(
         name = "prijava_kvar",
