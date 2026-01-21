@@ -33,14 +33,14 @@ spring:
             issuer-uri: https://accounts.google.com
   mail:
     host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    port: 465
     properties:
       mail:
         smtp:
           auth: true
           starttls:
+            enable: false
+          ssl:
             enable: true
           connectiontimeout: 5000
           timeout: 5000
