@@ -1,6 +1,5 @@
 package com.autoservis.services;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -25,10 +24,15 @@ public class PrijavaService {
 
   private final PrijavaServisaRepository prijavaRepo;
   private final TerminRepository terminRepo;
-  private final PdfService pdfService;
+  private final PdfService pdfService; // ostavljeno jer je u konstruktoru; ne koristi se
   private final EmailService emailService;
 
-  public PrijavaService(PrijavaServisaRepository prijavaRepo, TerminRepository terminRepo, PdfService pdfService, EmailService emailService) {
+  public PrijavaService(
+      PrijavaServisaRepository prijavaRepo,
+      TerminRepository terminRepo,
+      PdfService pdfService,
+      EmailService emailService
+  ) {
     this.prijavaRepo = prijavaRepo;
     this.terminRepo = terminRepo;
     this.pdfService = pdfService;
@@ -46,16 +50,27 @@ public class PrijavaService {
 
     // save prijava so it has id
     PrijavaServisa saved = prijavaRepo.save(prijava);
-    // generate pdf and save obrazac
-    File pdf = pdfService.generatePrijavaPdf(saved);
 
-    // optionally send email to owner with pdf attachment
+    // send simple confirmation email (no attachment)
     try {
-      if (saved.getVozilo() != null && saved.getVozilo().getOsoba() != null && saved.getVozilo().getOsoba().getEmail() != null) {
+      if (saved.getVozilo() != null
+          && saved.getVozilo().getOsoba() != null
+          && saved.getVozilo().getOsoba().getEmail() != null) {
+
         String to = saved.getVozilo().getOsoba().getEmail();
         String subj = "Potvrda prijave servisa - " + saved.getIdPrijava();
-        String body = "Vaša prijava servisa je primljena. Detalji su u privitku.";
-        emailService.sendEmailWithAttachment(to, subj, body, pdf);
+
+        String body =
+            "Poštovani,\n\n" +
+            "zaprimili smo vašu prijavu servisa.\n" +
+            "Broj prijave: " + saved.getIdPrijava() + "\n" +
+            (saved.getTermin() != null && saved.getTermin().getDatumVrijeme() != null
+                ? "Termin: " + saved.getTermin().getDatumVrijeme().toString() + "\n"
+                : "") +
+            "\nLijep pozdrav,\nAuto servis";
+
+        emailService.sendSimple(to, subj, body);
+        logger.info("Sent confirmation email to {} for prijava id {}", to, saved.getIdPrijava());
       }
     } catch (MessagingException ex) {
       // log and continue
@@ -66,7 +81,15 @@ public class PrijavaService {
   }
 
   @Transactional
-  public Optional<PrijavaServisa> updatePrijava(Long id, LocalDateTime newTerminDate, String newStatus, Long requesterId, boolean isAdmin, boolean isServiser) throws IOException, MessagingException {
+  public Optional<PrijavaServisa> updatePrijava(
+      Long id,
+      LocalDateTime newTerminDate,
+      String newStatus,
+      Long requesterId,
+      boolean isAdmin,
+      boolean isServiser
+  ) throws IOException, MessagingException {
+
     Optional<PrijavaServisa> opt = prijavaRepo.findById(id);
     if (opt.isEmpty()) return opt;
 
@@ -74,18 +97,24 @@ public class PrijavaService {
     LocalDateTime oldTermin = existing.getTermin() != null ? existing.getTermin().getDatumVrijeme() : null;
 
     // Authorization: only administrator or the assigned serviser may change status or postpone term
-    boolean isAssignedServiser = existing.getServiser() != null && existing.getServiser().getOsoba() != null && existing.getServiser().getOsoba().getIdOsoba().equals(requesterId);
+    boolean isAssignedServiser =
+        existing.getServiser() != null
+        && existing.getServiser().getOsoba() != null
+        && existing.getServiser().getOsoba().getIdOsoba().equals(requesterId);
+
     if (!isAdmin && !isAssignedServiser) {
       throw new org.springframework.security.access.AccessDeniedException("Nemate ovlasti za ažuriranje ove prijave.");
     }
 
     if (newTerminDate != null) {
       Termin oldTerminObj = existing.getTermin();
-      
-      Termin termin = null;
+
+      Termin termin;
       // Prefer existing predefined slot for the assigned serviser if present
       if (existing.getServiser() != null) {
-        java.util.Optional<Termin> existingSlot = terminRepo.findByDatumVrijemeAndServiser_IdServiser(newTerminDate, existing.getServiser().getIdServiser());
+        java.util.Optional<Termin> existingSlot =
+            terminRepo.findByDatumVrijemeAndServiser_IdServiser(newTerminDate, existing.getServiser().getIdServiser());
+
         if (existingSlot.isPresent()) {
           termin = existingSlot.get();
           // Mark the existing slot as taken
@@ -105,18 +134,19 @@ public class PrijavaService {
         termin.setZauzet(true);
         termin = terminRepo.save(termin);
       }
-      
+
       // Free up the old termin slot if it exists
       if (oldTerminObj != null && !oldTerminObj.equals(termin)) {
         oldTerminObj.setZauzet(false);
         terminRepo.save(oldTerminObj);
       }
-      
+
       existing.setTermin(termin);
     }
 
     boolean statusChanged = false;
-    if (newStatus != null && !newStatus.equals(existing.getStatus())) {
+    String oldStatus = existing.getStatus();
+    if (newStatus != null && !newStatus.equals(oldStatus)) {
       existing.setStatus(newStatus);
       statusChanged = true;
     }
@@ -125,39 +155,47 @@ public class PrijavaService {
 
     LocalDateTime newTermin = existing.getTermin() != null ? existing.getTermin().getDatumVrijeme() : null;
 
+    // decide if we should notify
     boolean shouldNotify = false;
-    if (oldTermin != null && newTermin != null) {
+
+    if (oldTermin != null && newTermin != null && !oldTermin.equals(newTermin)) {
       Duration diff = Duration.between(oldTermin, newTermin);
       if (diff.toDays() >= 3) shouldNotify = true;
     }
 
     if (!shouldNotify && statusChanged && "odgođeno".equalsIgnoreCase(existing.getStatus())) {
-      // if status changed to 'odgođeno' but no previous termin to compare, we still notify
       shouldNotify = true;
     }
 
     if (shouldNotify) {
       try {
-        // generate updated pdf and attempt to send - failures here should not break the update
-        File pdf = pdfService.generatePrijavaPdf(existing);
-
         String to = null;
-        if (existing.getVozilo() != null && existing.getVozilo().getOsoba() != null) to = existing.getVozilo().getOsoba().getEmail();
+        if (existing.getVozilo() != null && existing.getVozilo().getOsoba() != null) {
+          to = existing.getVozilo().getOsoba().getEmail();
+        }
+
         if (to != null) {
-          String subj = "Obavijest: termin servisa odgođen";
-          String body = String.format("Vaš termin servisa je promijenjen.%s\nStari termin: %s\nNovi termin: %s\nDetalji u privitku.",
-              "",
-              oldTermin != null ? oldTermin.toString() : "-",
-              newTermin != null ? newTermin.toString() : "-");
+          String subj = "Obavijest: promjena termina/statusa servisa - " + existing.getIdPrijava();
+
+          String body =
+              "Poštovani,\n\n" +
+              "došlo je do promjene vezane uz vašu prijavu servisa.\n" +
+              "Broj prijave: " + existing.getIdPrijava() + "\n" +
+              (oldStatus != null ? "Stari status: " + oldStatus + "\n" : "") +
+              (existing.getStatus() != null ? "Novi status: " + existing.getStatus() + "\n" : "") +
+              (oldTermin != null ? "Stari termin: " + oldTermin.toString() + "\n" : "") +
+              (newTermin != null ? "Novi termin: " + newTermin.toString() + "\n" : "") +
+              "\nLijep pozdrav,\nAuto servis";
+
           try {
-            emailService.sendEmailWithAttachment(to, subj, body, pdf);
-            logger.info("Sent postponement email to {} for prijava id {}", to, existing.getIdPrijava());
+            emailService.sendSimple(to, subj, body);
+            logger.info("Sent update notification email to {} for prijava id {}", to, existing.getIdPrijava());
           } catch (MessagingException ex) {
-            logger.error("Failed to send postponement email for prijava id {} to {}", existing.getIdPrijava(), to, ex);
+            logger.error("Failed to send update notification email for prijava id {} to {}", existing.getIdPrijava(), to, ex);
           }
         }
       } catch (Exception ex) {
-        logger.error("Failed to generate/send postponement notification for prijava id {}: {}", existing.getIdPrijava(), ex.getMessage(), ex);
+        logger.error("Failed to send update notification for prijava id {}: {}", existing.getIdPrijava(), ex.getMessage(), ex);
       }
     }
 
