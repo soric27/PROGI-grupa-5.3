@@ -26,8 +26,6 @@ import com.autoservis.repositories.TerminRepository;
 import com.autoservis.repositories.VoziloRepository;
 import com.autoservis.shared.PrijavaServisaMapper;
 
-import jakarta.mail.MessagingException;
-
 @Service
 public class PrijavaServisaService {
 
@@ -42,7 +40,7 @@ public class PrijavaServisaService {
     private final ZamjenaService zamjenaService;
     private final KvarRepository kvarRepository;
 
-    private final EmailService emailService;
+    private final BrevoEmailService  emailService;
 
     public PrijavaServisaService(
             PrijavaServisaRepository prijave,
@@ -53,7 +51,7 @@ public class PrijavaServisaService {
             OsobaRepository osobeRepo,
             ZamjenaService zamjenaService,
             KvarRepository kvarRepository,
-            EmailService emailService
+            BrevoEmailService  emailService
     ) {
         this.prijave = prijave;
         this.vozila = vozila;
@@ -138,7 +136,7 @@ public class PrijavaServisaService {
             } else {
                 logger.warn("No email found for owner (idOsoba={}) - confirmation email not sent", idVlasnika);
             }
-        } catch (MessagingException ex) {
+        } catch (Exception ex) {
             logger.error("Failed to send confirmation email for prijava id {}", novaPrijava.getIdPrijava(), ex);
         }
         // --- KRAJ EMAIL ---
@@ -209,7 +207,7 @@ public class PrijavaServisaService {
             } else {
                 logger.warn("No email found for owner (idOsoba={}) - confirmation email not sent", idVlasnika);
             }
-        } catch (MessagingException ex) {
+        } catch (Exception ex) {
             logger.error("Failed to send confirmation email for prijava id {}", novaPrijava.getIdPrijava(), ex);
         }
         // --- KRAJ EMAIL ---

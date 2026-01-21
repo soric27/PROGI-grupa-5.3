@@ -15,8 +15,6 @@ import com.autoservis.models.Termin;
 import com.autoservis.repositories.PrijavaServisaRepository;
 import com.autoservis.repositories.TerminRepository;
 
-import jakarta.mail.MessagingException;
-
 @Service
 public class PrijavaService {
 
@@ -25,13 +23,13 @@ public class PrijavaService {
   private final PrijavaServisaRepository prijavaRepo;
   private final TerminRepository terminRepo;
   private final PdfService pdfService; // ostavljeno jer je u konstruktoru; ne koristi se
-  private final EmailService emailService;
+  private final BrevoEmailService   emailService;
 
   public PrijavaService(
       PrijavaServisaRepository prijavaRepo,
       TerminRepository terminRepo,
       PdfService pdfService,
-      EmailService emailService
+      BrevoEmailService   emailService
   ) {
     this.prijavaRepo = prijavaRepo;
     this.terminRepo = terminRepo;
@@ -76,7 +74,7 @@ public class PrijavaService {
         emailService.sendSimple(to, subj, body);
         logger.info("Sent confirmation email to {} for prijava id {}", to, saved.getIdPrijava());
       }
-    } catch (MessagingException ex) {
+    } catch (Exception ex) {
       // log and continue
       logger.error("Failed to send confirmation email for prijava id {}", saved.getIdPrijava(), ex);
     }
@@ -92,7 +90,7 @@ public class PrijavaService {
       Long requesterId,
       boolean isAdmin,
       boolean isServiser
-  ) throws IOException, MessagingException {
+  ) throws IOException {
 
     Optional<PrijavaServisa> opt = prijavaRepo.findById(id);
     if (opt.isEmpty()) return opt;
@@ -194,7 +192,7 @@ public class PrijavaService {
           try {
             emailService.sendSimple(to, subj, body);
             logger.info("Sent update notification email to {} for prijava id {}", to, existing.getIdPrijava());
-          } catch (MessagingException ex) {
+          } catch (Exception ex) {
             logger.error("Failed to send update notification email for prijava id {} to {}", existing.getIdPrijava(), to, ex);
           }
         }
