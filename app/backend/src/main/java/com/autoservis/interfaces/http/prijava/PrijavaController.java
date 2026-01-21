@@ -27,7 +27,7 @@ import com.autoservis.services.PrijavaService;
 import jakarta.mail.MessagingException;
 
 @RestController
-@RequestMapping({"/api/prijave", "/api/appointments/prijave"})
+@RequestMapping({"/api/prijave"})
 public class PrijavaController {
 
   @Autowired

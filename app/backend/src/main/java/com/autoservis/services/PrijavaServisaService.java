@@ -2,6 +2,8 @@ package com.autoservis.services;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +26,12 @@ import com.autoservis.repositories.TerminRepository;
 import com.autoservis.repositories.VoziloRepository;
 import com.autoservis.shared.PrijavaServisaMapper;
 
+import jakarta.mail.MessagingException;
 
 @Service
 public class PrijavaServisaService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PrijavaServisaService.class);
 
     private final PrijavaServisaRepository prijave;
     private final VoziloRepository vozila;
@@ -37,7 +42,19 @@ public class PrijavaServisaService {
     private final ZamjenaService zamjenaService;
     private final KvarRepository kvarRepository;
 
-    public PrijavaServisaService(PrijavaServisaRepository prijave, VoziloRepository vozila, ServiserRepository serviseri, TerminRepository termini, NapomenaServiseraRepository n, OsobaRepository osobeRepo, ZamjenaService zamjenaService, KvarRepository kvarRepository) {
+    private final EmailService emailService;
+
+    public PrijavaServisaService(
+            PrijavaServisaRepository prijave,
+            VoziloRepository vozila,
+            ServiserRepository serviseri,
+            TerminRepository termini,
+            NapomenaServiseraRepository n,
+            OsobaRepository osobeRepo,
+            ZamjenaService zamjenaService,
+            KvarRepository kvarRepository,
+            EmailService emailService
+    ) {
         this.prijave = prijave;
         this.vozila = vozila;
         this.serviseri = serviseri;
@@ -46,6 +63,7 @@ public class PrijavaServisaService {
         this.osobeRepo = osobeRepo;
         this.zamjenaService = zamjenaService;
         this.kvarRepository = kvarRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -53,8 +71,6 @@ public class PrijavaServisaService {
         PrijavaServisa prijava = prijave.findById(idPrijava)
                 .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
 
-        // Only administrators should call this method (controller enforces it)
-        // Dohvati vlasnika vozila i ažuriraj polja ako su proslijeđena
         com.autoservis.models.Osoba vlasnik = prijava.getVozilo().getOsoba();
         if (dto.ime() != null && !dto.ime().isBlank()) vlasnik.setIme(dto.ime());
         if (dto.prezime() != null && !dto.prezime().isBlank()) vlasnik.setPrezime(dto.prezime());
@@ -94,14 +110,38 @@ public class PrijavaServisaService {
         PrijavaServisa novaPrijava = new PrijavaServisa(
                 vozilo, serviser, termin, dto.napomenaVlasnika()
         );
-        
+
         // Dodaj odabrane kvarove ako su proslijeđeni
         if (dto.idKvarovi() != null && !dto.idKvarovi().isEmpty()) {
             java.util.List<Kvar> kvarovi = kvarRepository.findAllById(dto.idKvarovi());
             novaPrijava.setKvarovi(kvarovi);
         }
-        
+
         prijave.save(novaPrijava);
+
+        // --- EMAIL POTVRDA (bez privitka) ---
+        try {
+            String to = (vozilo.getOsoba() != null) ? vozilo.getOsoba().getEmail() : null;
+            if (to != null && !to.isBlank()) {
+                String subj = "Potvrda prijave servisa - " + novaPrijava.getIdPrijava();
+                String body =
+                        "Poštovani,\n\n" +
+                        "zaprimili smo vašu prijavu servisa.\n" +
+                        "Broj prijave: " + novaPrijava.getIdPrijava() + "\n" +
+                        (termin != null && termin.getDatumVrijeme() != null
+                                ? "Termin: " + termin.getDatumVrijeme().toString() + "\n"
+                                : "") +
+                        "\nLijep pozdrav,\nAuto servis";
+
+                emailService.sendSimple(to, subj, body);
+                logger.info("Sent confirmation email to {} for prijava id {}", to, novaPrijava.getIdPrijava());
+            } else {
+                logger.warn("No email found for owner (idOsoba={}) - confirmation email not sent", idVlasnika);
+            }
+        } catch (MessagingException ex) {
+            logger.error("Failed to send confirmation email for prijava id {}", novaPrijava.getIdPrijava(), ex);
+        }
+        // --- KRAJ EMAIL ---
 
         // If user requested a replacement vehicle at creation, try to reserve it
         com.autoservis.models.RezervacijaZamjene rez = null;
@@ -141,14 +181,38 @@ public class PrijavaServisaService {
         PrijavaServisa novaPrijava = new PrijavaServisa(
                 vozilo, serviser, termin, dto.napomenaVlasnika()
         );
-        
+
         // Dodaj odabrane kvarove ako su proslijeđeni
         if (dto.idKvarovi() != null && !dto.idKvarovi().isEmpty()) {
             java.util.List<Kvar> kvarovi = kvarRepository.findAllById(dto.idKvarovi());
             novaPrijava.setKvarovi(kvarovi);
         }
-        
+
         prijave.save(novaPrijava);
+
+        // --- EMAIL POTVRDA (bez privitka) ---
+        try {
+            String to = (vozilo.getOsoba() != null) ? vozilo.getOsoba().getEmail() : null;
+            if (to != null && !to.isBlank()) {
+                String subj = "Potvrda prijave servisa - " + novaPrijava.getIdPrijava();
+                String body =
+                        "Poštovani,\n\n" +
+                        "zaprimili smo vašu prijavu servisa.\n" +
+                        "Broj prijave: " + novaPrijava.getIdPrijava() + "\n" +
+                        (termin != null && termin.getDatumVrijeme() != null
+                                ? "Termin: " + termin.getDatumVrijeme().toString() + "\n"
+                                : "") +
+                        "\nLijep pozdrav,\nAuto servis";
+
+                emailService.sendSimple(to, subj, body);
+                logger.info("Sent confirmation email to {} for prijava id {}", to, novaPrijava.getIdPrijava());
+            } else {
+                logger.warn("No email found for owner (idOsoba={}) - confirmation email not sent", idVlasnika);
+            }
+        } catch (MessagingException ex) {
+            logger.error("Failed to send confirmation email for prijava id {}", novaPrijava.getIdPrijava(), ex);
+        }
+        // --- KRAJ EMAIL ---
 
         com.autoservis.models.RezervacijaZamjene rez = null;
         if (dto.idZamjena() != null && dto.datumOd() != null && dto.datumDo() != null) {
@@ -158,7 +222,6 @@ public class PrijavaServisaService {
         return com.autoservis.shared.PrijavaServisaMapper.toDetailDto(novaPrijava, rez);
     }
 
-    // Administrator: obriši prijavu i oslobodi termin
     @Transactional
     public void deletePrijavaAsAdmin(Long idPrijave) {
         PrijavaServisa prijava = prijave.findById(idPrijave)
@@ -173,7 +236,6 @@ public class PrijavaServisaService {
         prijave.deleteById(idPrijave);
     }
 
-    // Delete prijava: allowed for owner (korisnik) or administrator
     @Transactional
     public void deletePrijava(Long idPrijave, Long idOsobaPrincipal, boolean isAdmin) {
         PrijavaServisa prijava = prijave.findById(idPrijave)
@@ -207,7 +269,6 @@ public class PrijavaServisaService {
 
     @Transactional(readOnly = true)
     public List<PrijavaDetalleDto> getPrijaveForServiser(Long idOsoba) {
-        // If the person is not registered as a serviser in DB, return empty list (caller may still be allowed by role)
         return serviseri.findByOsoba_IdOsoba(idOsoba)
                 .map(serviser -> prijave.findAll().stream()
                         .filter(p -> p.getServiser().getIdServiser().equals(serviser.getIdServiser()))
@@ -226,10 +287,9 @@ public class PrijavaServisaService {
         PrijavaServisa prijava = prijave.findById(idPrijava)
                 .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
 
-        // SIGURNOSNA PROVJERA
         Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsobaPrincipal)
                 .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
-        
+
         if (!prijava.getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
             throw new AccessDeniedException("Možete mijenjati status samo svojih prijava.");
         }
@@ -237,20 +297,19 @@ public class PrijavaServisaService {
         prijava.setStatus(noviStatus);
         prijave.save(prijava);
     }
-    
+
     @Transactional
     public void addNapomena(Long idPrijava, NapomenaCreateDto dto, Long idOsobaPrincipal) {
         PrijavaServisa prijava = prijave.findById(idPrijava)
                 .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
-         
-        // SIGURNOSNA PROVJERA
+
         Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsobaPrincipal)
                 .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
-        
+
         if (!prijava.getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
             throw new AccessDeniedException("Možete dodavati napomene samo na svoje prijave.");
         }
-        
+
         NapomenaServisera novaNapomena = new NapomenaServisera(prijava, dto.opis());
         napomeneRepo.save(novaNapomena);
     }
@@ -260,11 +319,9 @@ public class PrijavaServisaService {
         PrijavaServisa prijava = prijave.findById(idPrijava)
                 .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
 
-        // Only administrators should call this method (controller enforces it)
         Vozilo novo = vozila.findById(idVozilo)
                 .orElseThrow(() -> new IllegalArgumentException("Vozilo ne postoji."));
 
-        // Provjeri da novo vozilo pripada istom vlasniku
         if (!novo.getOsoba().getIdOsoba().equals(prijava.getVozilo().getOsoba().getIdOsoba())) {
             throw new IllegalArgumentException("Novo vozilo mora pripadati istom vlasniku.");
         }
