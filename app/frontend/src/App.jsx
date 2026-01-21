@@ -11,7 +11,12 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Vozila from "./pages/Vozila";
 import Kontakt from "./pages/Kontakt";
+import Appointments from "./pages/Appointments";
 import RoleSelection from "./pages/RoleSelection";
+import Osobe from "./pages/Osobe";
+import Servis from "./pages/Servis";
+import Zamjene from "./pages/Zamjene";
+import Statistika from "./pages/Statistika";
 
 // --- AXIOS GLOBAL ---
 axios.defaults.baseURL = process.env.REACT_APP_API_URL;
@@ -56,9 +61,11 @@ function AppRoutes() {
       try {
         const payload = JSON.parse(atob(saved.split('.')[1]));
         setUser({
+          idOsoba: payload.id_osoba,
           email: payload.email,
           ime: payload.ime,
-          prezime: payload.prezime
+          prezime: payload.prezime,
+          uloga: payload.uloga
         });
       } catch (e) {
         setUser(null);
@@ -70,7 +77,9 @@ function AppRoutes() {
   useEffect(() => {
     const token = readTokenFromURL(location);
 
-    if (token) {
+    // Ako smo na stranici za odabir uloge (role-selection), ne procesiramo token automatski
+    // jer želimo da RoleSelection.jsx dohvati token iz query parametra.
+    if (token && location.pathname !== "/role-selection") {
       sessionStorage.setItem(TOKEN_KEY, token);
       setAuthHeader(token);
 
@@ -78,9 +87,11 @@ function AppRoutes() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUser({
+          idOsoba: payload.id_osoba,
           email: payload.email,
           ime: payload.ime,
-          prezime: payload.prezime
+          prezime: payload.prezime,
+          uloga: payload.uloga
         });
       } catch (e) {
         console.error("Invalid JWT", e);
@@ -90,7 +101,7 @@ function AppRoutes() {
       // Makni token iz URL-a bez reloada
       navigate("/", { replace: true });
     }
-  }, [location.search, location.hash, navigate]);
+  }, [location.search, location.hash, location.pathname, navigate]);
 
   return (
     <>
@@ -100,7 +111,12 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/vozila" element={<Vozila user={user} />} />
           <Route path="/kontakt" element={<Kontakt />} />
+          <Route path="/appointments" element={<Appointments user={user} />} />
           <Route path="/role-selection" element={<RoleSelection />} />
+          <Route path="/servis" element={<Servis user={user} />} />
+          <Route path="/osobe" element={<Osobe user={user} />} />
+          <Route path="/zamjene" element={<Zamjene user={user} />} />
+          <Route path="/statistika" element={<Statistika user={user} />} />
         </Routes>
       </div>
     </>

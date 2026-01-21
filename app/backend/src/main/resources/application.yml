@@ -5,16 +5,18 @@ server:
     session:
       cookie:
         same-site: lax
-        secure: true
+        secure: false
 
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/auto_servis}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     open-in-view: false
   security:
     oauth2:
@@ -27,15 +29,15 @@ spring:
               - openid
               - profile
               - email
-            redirect-uri: ${GOOGLE_CALLBACK_URL}
+            redirect-uri: ${GOOGLE_CALLBACK_URL:http://localhost:8080/login/oauth2/code/google}
         provider:
           google:
             issuer-uri: https://accounts.google.com
   mail:
-    host: ${MAIL_HOST:}
+    host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -43,7 +45,7 @@ spring:
           starttls.enable: true
 
 app:
-  frontend-url: ${FRONTEND_URL}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
   jwt-secret: ${JWT_SECRET}
   storage:
     pdf-dir: ${PDF_STORAGE:./data/pdfs}

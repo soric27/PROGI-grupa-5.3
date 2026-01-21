@@ -1,18 +1,19 @@
 package com.autoservis.services;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.autoservis.interfaces.http.vozilo.VehicleCreateDto;
+import com.autoservis.interfaces.http.vozilo.VehicleDto;
 import com.autoservis.models.Model;
 import com.autoservis.models.Osoba;
 import com.autoservis.models.Vozilo;
 import com.autoservis.repositories.ModelRepository;
 import com.autoservis.repositories.OsobaRepository;
 import com.autoservis.repositories.VoziloRepository;
-import com.autoservis.interfaces.http.vozilo.VehicleCreateDto;
-import com.autoservis.interfaces.http.vozilo.VehicleDto;
 import com.autoservis.shared.VehicleMapper;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class VoziloServiceImpl implements VoziloService {
@@ -40,6 +41,15 @@ public class VoziloServiceImpl implements VoziloService {
 
   @Override @Transactional
   public void deleteById(Long idVozilo) {
+    vozila.deleteById(idVozilo);
+  }
+
+  @Override @Transactional
+  public void deleteIfAllowed(Long idVozilo, Long requesterId, boolean isAdmin) {
+    var v = vozila.findById(idVozilo).orElseThrow(() -> new IllegalArgumentException("Vozilo ne postoji."));
+    if (!isAdmin && !v.getOsoba().getIdOsoba().equals(requesterId)) {
+      throw new org.springframework.security.access.AccessDeniedException("Nemate dopuštenje za brisanje ovog vozila.");
+    }
     vozila.deleteById(idVozilo);
   }
 }

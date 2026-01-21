@@ -1,20 +1,24 @@
 package com.autoservis.services;
 
-import com.autoservis.models.PrijavaServisa;
-import com.autoservis.models.Termin;
-import com.autoservis.repositories.PrijavaServisaRepository;
-import com.autoservis.repositories.TerminRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import jakarta.mail.MessagingException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.autoservis.interfaces.dto.PrijavaDetalleDto;
+import com.autoservis.models.PrijavaServisa;
+import com.autoservis.models.Termin;
+import com.autoservis.repositories.PrijavaServisaRepository;
+import com.autoservis.repositories.TerminRepository;
+import com.autoservis.shared.PrijavaServisaMapper;
+
+import jakarta.mail.MessagingException;
 
 @Service
 public class PrijavaService {
@@ -64,16 +68,55 @@ public class PrijavaService {
   }
 
   @Transactional
-  public Optional<PrijavaServisa> updatePrijava(Long id, LocalDateTime newTerminDate, String newStatus) throws IOException, MessagingException {
+  public Optional<PrijavaDetalleDto> updatePrijava(Long id, LocalDateTime newTerminDate, String newStatus, Long requesterId, boolean isAdmin, boolean isServiser) throws IOException, MessagingException {
     Optional<PrijavaServisa> opt = prijavaRepo.findById(id);
-    if (opt.isEmpty()) return opt;
+    if (opt.isEmpty()) return Optional.empty();
 
     PrijavaServisa existing = opt.get();
     LocalDateTime oldTermin = existing.getTermin() != null ? existing.getTermin().getDatumVrijeme() : null;
 
+    // Authorization: only administrator or the assigned serviser may change status or postpone term
+    boolean isAssignedServiser = existing.getServiser() != null && existing.getServiser().getOsoba() != null && existing.getServiser().getOsoba().getIdOsoba().equals(requesterId);
+    if (!isAdmin && !isAssignedServiser) {
+      throw new org.springframework.security.access.AccessDeniedException("Nemate ovlasti za ažuriranje ove prijave.");
+    }
+
     if (newTerminDate != null) {
-      Termin termin = new Termin(newTerminDate);
-      termin = terminRepo.save(termin);
+      if (oldTermin != null && !newTerminDate.isAfter(oldTermin)) {
+        throw new IllegalArgumentException("Novi termin mora biti nakon trenutnog termina.");
+      }
+      Termin oldTerminObj = existing.getTermin();
+      
+      Termin termin = null;
+      // Prefer existing predefined slot for the assigned serviser if present
+      if (existing.getServiser() != null) {
+        java.util.Optional<Termin> existingSlot = terminRepo.findByDatumVrijemeAndServiser_IdServiser(newTerminDate, existing.getServiser().getIdServiser());
+        if (existingSlot.isPresent()) {
+          termin = existingSlot.get();
+          // Mark the existing slot as taken
+          if (!termin.isZauzet()) {
+            termin.setZauzet(true);
+            terminRepo.save(termin);
+          }
+        } else {
+          // create a new termin tied to the serviser so it shows up in the serviser's schedule
+          termin = new Termin(newTerminDate, existing.getServiser());
+          termin.setZauzet(true);
+          termin = terminRepo.save(termin);
+        }
+      } else {
+        // no assigned serviser: keep behavior of creating standalone termin
+        termin = new Termin(newTerminDate);
+        termin.setZauzet(true);
+        termin = terminRepo.save(termin);
+      }
+      
+      // Free up the old termin slot if it exists
+      if (oldTerminObj != null && !oldTerminObj.equals(termin)) {
+        oldTerminObj.setZauzet(false);
+        terminRepo.save(oldTerminObj);
+      }
+      
       existing.setTermin(termin);
     }
 
@@ -99,26 +142,30 @@ public class PrijavaService {
     }
 
     if (shouldNotify) {
-      // generate updated pdf
-      File pdf = pdfService.generatePrijavaPdf(existing);
+      try {
+        // generate updated pdf and attempt to send - failures here should not break the update
+        File pdf = pdfService.generatePrijavaPdf(existing);
 
-      String to = null;
-      if (existing.getVozilo() != null && existing.getVozilo().getOsoba() != null) to = existing.getVozilo().getOsoba().getEmail();
-      if (to != null) {
-        String subj = "Obavijest: termin servisa odgođen";
-        String body = String.format("Vaš termin servisa je promijenjen.%s\nStari termin: %s\nNovi termin: %s\nDetalji u privitku.",
-            "",
-            oldTermin != null ? oldTermin.toString() : "-",
-            newTermin != null ? newTermin.toString() : "-");
-        try {
-          emailService.sendEmailWithAttachment(to, subj, body, pdf);
-          logger.info("Sent postponement email to {} for prijava id {}", to, existing.getIdPrijava());
-        } catch (MessagingException ex) {
-          logger.error("Failed to send postponement email for prijava id {} to {}", existing.getIdPrijava(), to, ex);
+        String to = null;
+        if (existing.getVozilo() != null && existing.getVozilo().getOsoba() != null) to = existing.getVozilo().getOsoba().getEmail();
+        if (to != null) {
+          String subj = "Obavijest: termin servisa odgođen";
+          String body = String.format("Vaš termin servisa je promijenjen.%s\nStari termin: %s\nNovi termin: %s\nDetalji u privitku.",
+              "",
+              oldTermin != null ? oldTermin.toString() : "-",
+              newTermin != null ? newTermin.toString() : "-");
+          try {
+            emailService.sendEmailWithAttachment(to, subj, body, pdf);
+            logger.info("Sent postponement email to {} for prijava id {}", to, existing.getIdPrijava());
+          } catch (MessagingException ex) {
+            logger.error("Failed to send postponement email for prijava id {} to {}", existing.getIdPrijava(), to, ex);
+          }
         }
+      } catch (Exception ex) {
+        logger.error("Failed to generate/send postponement notification for prijava id {}: {}", existing.getIdPrijava(), ex.getMessage(), ex);
       }
     }
 
-    return Optional.of(existing);
+    return Optional.of(PrijavaServisaMapper.toDetailDto(existing));
   }
 }

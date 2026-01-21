@@ -1,6 +1,11 @@
 package com.autoservis.models;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity @Table(name="osoba")
 public class Osoba {
@@ -27,4 +32,10 @@ public class Osoba {
   public String getEmail(){ return email; }
   public String getUloga(){ return uloga; }
   public String getOauthId(){ return oauthId; }
-}
+
+  // Setteri za ažuriranje podataka
+  public void setIme(String ime){ this.ime = ime; }
+  public void setPrezime(String prezime){ this.prezime = prezime; }
+  public void setEmail(String email){ this.email = email; }
+  public void setUloga(String uloga){ this.uloga = uloga; }
+} 

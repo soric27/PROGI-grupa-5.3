@@ -25,7 +25,7 @@ public class StatsController {
   private StatsExportService exportService;
 
   @GetMapping
-  @PreAuthorize("hasRole('SERVISER')")
+  @PreAuthorize("hasAnyRole('SERVISER','ADMINISTRATOR')")
   public ResponseEntity<?> getStats(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                                     @RequestParam(defaultValue = "json") String format) throws IOException {

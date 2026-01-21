@@ -9,7 +9,8 @@ function RoleSelection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const token = searchParams.get("token");
+  const tokenFromQuery = searchParams.get("token");
+  const token = tokenFromQuery || sessionStorage.getItem("auth_token");
 
   // Ako nema tokena, preusmjeri na home
   useEffect(() => {
@@ -35,11 +36,12 @@ function RoleSelection() {
       sessionStorage.setItem("auth_token", response.data.token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.token}`;
 
-      // Preusmjeri na home
-      navigate("/");
+      // Preusmjeri na home (full reload so App sees updated token)
+      window.location.replace("/");
     } catch (err) {
       console.error("Greška pri izboru uloge:", err);
-      setError("Greška pri izboru uloge. Pokušajte ponovno.");
+      const msg = err?.response?.data?.message || "Greška pri izboru uloge. Pokušajte ponovno.";
+      setError(msg);
       setLoading(false);
     }
   };
@@ -61,7 +63,7 @@ function RoleSelection() {
             onClick={() => handleSelectRole("korisnik")}
             disabled={loading}
           >
-            {loading ? "Učitavanje..." : "Obični korisnik"}
+            {loading ? "Učitavanje..." : "👤 Obični korisnik"}
           </button>
 
           <button
@@ -69,7 +71,7 @@ function RoleSelection() {
             onClick={() => handleSelectRole("serviser")}
             disabled={loading}
           >
-            {loading ? "Učitavanje..." : "Serviser"}
+            {loading ? "Učitavanje..." : "🔧 Serviser"}
           </button>
 
           <button
@@ -77,12 +79,12 @@ function RoleSelection() {
             onClick={() => handleSelectRole("administrator")}
             disabled={loading}
           >
-            {loading ? "Učitavanje..." : "Administrator"}
+            {loading ? "Učitavanje..." : "👨‍💼 Administrator"}
           </button>
         </div>
 
         <p className="text-center text-muted mt-4 small">
-          Ovu ulogu možete promijeniti kasnije u postavkama.
+          Ovu ulogu možete promijeniti kasnije.
         </p>
       </div>
     </div>

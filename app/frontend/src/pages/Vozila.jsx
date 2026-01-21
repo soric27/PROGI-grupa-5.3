@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import "bootstrap/dist/css/bootstrap.min.css";
 
 function Vozila({ user }) {
   const [vozila, setVozila] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedUserForAdmin, setSelectedUserForAdmin] = useState("");
   const [marke, setMarke] = useState([]);
   const [modeli, setModeli] = useState([]);
   const [novoVozilo, setNovoVozilo] = useState({
@@ -17,20 +19,34 @@ function Vozila({ user }) {
   // vozila prijavljenog korisnika
   useEffect(() => {
     if (user) {
-      axios
-        .get("/api/vehicles", { withCredentials: true })
-        .then((res) => setVozila(res.data))
-        .catch((err) => console.error("Gre≈°ka pri dohvaƒáanju vozila:", err));
+      if (user.uloga === "administrator" && selectedUserForAdmin) {
+        axios
+          .get(`/api/vehicles/for/${selectedUserForAdmin}`, { withCredentials: true })
+          .then((res) => setVozila(res.data))
+          .catch((err) => console.error("Greöka pri dohvaÊanju vozila:", err));
+      } else {
+        axios
+          .get("/api/vehicles", { withCredentials: true })
+          .then((res) => setVozila(res.data))
+          .catch((err) => console.error("Greöka pri dohvaÊanju vozila:", err));
+      }
     }
-  }, [user]);
+  }, [user, selectedUserForAdmin]);
 
   // marke automobila
   useEffect(() => {
     axios
       .get("/api/marke")
       .then((res) => setMarke(res.data))
-      .catch((err) => console.error("Gre≈°ka pri dohvaƒáanju marki:", err));
-  }, []);
+      .catch((err) => console.error("Greöka pri dohvaÊanju marki:", err));
+
+    if (user && user.uloga === "administrator") {
+      axios
+        .get("/api/users")
+        .then((r) => setUsers(r.data))
+        .catch((err) => console.error("Greöka pri dohvatu korisnika", err));
+    }
+  }, [user]);
 
   // modeli odredjene marke
   useEffect(() => {
@@ -38,7 +54,7 @@ function Vozila({ user }) {
       axios
         .get(`/api/modeli/${novoVozilo.id_marka}`)
         .then((res) => setModeli(res.data))
-        .catch((err) => console.error("Gre≈°ka pri dohvaƒáanju modela:", err));
+        .catch((err) => console.error("Greöka pri dohvaÊanju modela:", err));
     } else {
       setModeli([]);
     }
@@ -53,20 +69,37 @@ function Vozila({ user }) {
     e.preventDefault();
 
     try {
-      await axios.post(
-        "/api/vehicles",
-        {
-          id_model: Number(novoVozilo.id_model),
-          registracija: novoVozilo.registracija,
-          godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
-        },
-        { withCredentials: true }
-      );
+      if (user && user.uloga === "administrator" && selectedUserForAdmin) {
+        await axios.post(
+          `/api/vehicles/for/${selectedUserForAdmin}`,
+          {
+            id_model: Number(novoVozilo.id_model),
+            registracija: novoVozilo.registracija,
+            godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
+          },
+          { withCredentials: true }
+        );
 
-      const response = await axios.get("/api/vehicles", {
-        withCredentials: true,
-      });
-      setVozila(response.data);
+        const response = await axios.get(`/api/vehicles/for/${selectedUserForAdmin}`, {
+          withCredentials: true,
+        });
+        setVozila(response.data);
+      } else {
+        await axios.post(
+          "/api/vehicles",
+          {
+            id_model: Number(novoVozilo.id_model),
+            registracija: novoVozilo.registracija,
+            godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
+          },
+          { withCredentials: true }
+        );
+
+        const response = await axios.get("/api/vehicles", {
+          withCredentials: true,
+        });
+        setVozila(response.data);
+      }
 
       setNovoVozilo({
         id_marka: "",
@@ -76,7 +109,7 @@ function Vozila({ user }) {
       });
       setShowForm(false);
     } catch (err) {
-      console.error("Gre≈°ka pri dodavanju vozila:", err);
+      console.error("Greöka pri dodavanju vozila:", err);
     }
   };
 
@@ -92,14 +125,31 @@ function Vozila({ user }) {
     <div className="container mt-4">
       <h2 className="mb-3">Moja vozila</h2>
 
-      <button
-        className="btn btn-primary mb-3"
-        onClick={() => setShowForm(!showForm)}
-      >
-        {showForm ? "Zatvori unos" : "Dodaj vozilo"}
-      </button>
+      {(user.uloga === "korisnik" || user.uloga === "administrator") && (
+        <button className="btn btn-primary mb-3" onClick={() => setShowForm(!showForm)}>
+          {showForm ? "Zatvori unos" : "Dodaj vozilo"}
+        </button>
+      )}
 
-      {showForm && (
+      {user.uloga === "administrator" && (
+        <div className="mb-3">
+          <label className="form-label">Odaberite korisnika</label>
+          <select
+            className="form-select"
+            value={selectedUserForAdmin}
+            onChange={(e) => setSelectedUserForAdmin(e.target.value)}
+          >
+            <option value="">-- odaberite korisnika --</option>
+            {users.map((u) => (
+              <option key={u.idOsoba} value={u.idOsoba}>
+                {u.imePrezime} ({u.email})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {showForm && (user.uloga === "korisnik" || user.uloga === "administrator") && (
         <div className="card p-4 mb-4 shadow-sm">
           <h5 className="mb-3">Novi unos vozila</h5>
           <form onSubmit={handleSubmit}>
@@ -190,12 +240,37 @@ function Vozila({ user }) {
                 <td>{v.model_naziv}</td>
                 <td>{v.registracija}</td>
                 <td>{v.godina_proizvodnje}</td>
+                {user && (
+                  <td>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={async () => {
+                        if (!window.confirm("Obrisati ovo vozilo?")) return;
+                        try {
+                          await axios.delete(`/api/vehicles/${v.id_vozilo}`);
+                          if (selectedUserForAdmin) {
+                            const r = await axios.get(`/api/vehicles/for/${selectedUserForAdmin}`);
+                            setVozila(r.data);
+                          } else {
+                            const r = await axios.get("/api/vehicles");
+                            setVozila(r.data);
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          alert("Greöka pri brisanju vozila");
+                        }
+                      }}
+                    >
+                      Obriöi
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <p>Jo≈° niste prijavili nijedno vozilo.</p>
+        <p>Joö niste prijavili nijedno vozilo.</p>
       )}
     </div>
   );

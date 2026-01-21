@@ -153,3 +153,83 @@ INSERT INTO model (id_marka, naziv) VALUES
 
 -- Fiat
 (13, 'Panda'), (13, '500'), (13, 'Tipo'), (13, 'Punto'), (13, 'Doblo');
+
+
+-- ===== Per-serviser termini seed (idempotent, Postgres-safe) =====
+-- Add column if missing and FK if possible, then insert servisere and 7 days x 9..16 terms
+
+-- If you are currently in an aborted transaction in psql, run: ROLLBACK; or open a new connection before running this script.
+
+ALTER TABLE termin ADD COLUMN IF NOT EXISTS id_serviser bigint;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='serviser') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.table_constraints tc
+      JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+      WHERE tc.table_name = 'termin' AND tc.constraint_type = 'FOREIGN KEY' AND kcu.column_name = 'id_serviser'
+    ) THEN
+      BEGIN
+        ALTER TABLE termin ADD CONSTRAINT fk_termin_serviser FOREIGN KEY (id_serviser) REFERENCES serviser(id_serviser);
+      EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Could not add fk_termin_serviser: %', SQLERRM;
+      END;
+    END IF;
+  ELSE
+    RAISE NOTICE 'Table serviser not found, skipping FK creation.';
+  END IF;
+END$$;
+
+-- Create sample servisers (idempotent: uses existing osoba by email)
+DO $$
+BEGIN
+  INSERT INTO osoba (ime, prezime, email, uloga, oauth_id)
+    SELECT 'Ivan','Ivić','ivan.serviser@example.com','serviser','srv-ivan'
+    WHERE NOT EXISTS (SELECT 1 FROM osoba WHERE email='ivan.serviser@example.com');
+  INSERT INTO osoba (ime, prezime, email, uloga, oauth_id)
+    SELECT 'Marko','Marković','marko.serviser@example.com','serviser','srv-marko'
+    WHERE NOT EXISTS (SELECT 1 FROM osoba WHERE email='marko.serviser@example.com');
+  INSERT INTO osoba (ime, prezime, email, uloga, oauth_id)
+    SELECT 'Ana','Anić','ana.serviser@example.com','serviser','srv-ana'
+    WHERE NOT EXISTS (SELECT 1 FROM osoba WHERE email='ana.serviser@example.com');
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Skipping osoba inserts (maybe already present): %', SQLERRM;
+END$$;
+
+DO $$
+BEGIN
+  INSERT INTO serviser (id_osoba, je_li_voditelj)
+    SELECT o.id_osoba, false FROM osoba o WHERE o.email = 'ivan.serviser@example.com' AND NOT EXISTS (SELECT 1 FROM serviser s JOIN osoba oo ON s.id_osoba = oo.id_osoba WHERE oo.email = 'ivan.serviser@example.com');
+  INSERT INTO serviser (id_osoba, je_li_voditelj)
+    SELECT o.id_osoba, false FROM osoba o WHERE o.email = 'marko.serviser@example.com' AND NOT EXISTS (SELECT 1 FROM serviser s JOIN osoba oo ON s.id_osoba = oo.id_osoba WHERE oo.email = 'marko.serviser@example.com');
+  INSERT INTO serviser (id_osoba, je_li_voditelj)
+    SELECT o.id_osoba, false FROM osoba o WHERE o.email = 'ana.serviser@example.com' AND NOT EXISTS (SELECT 1 FROM serviser s JOIN osoba oo ON s.id_osoba = oo.id_osoba WHERE oo.email = 'ana.serviser@example.com');
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Skipping serviser inserts (maybe already present): %', SQLERRM;
+END$$;
+
+-- Insert terms for next 7 days (9:00 - 16:00) for each serviser, avoid duplicates
+DO $$
+DECLARE
+  d date := current_date;
+  s record;
+  h int;
+BEGIN
+  FOR s IN SELECT id_serviser FROM serviser LOOP
+    FOR h IN 9..16 LOOP
+      FOR i IN 0..6 LOOP
+        PERFORM 1 FROM termin t WHERE t.datum_vrijeme = ((d + i) + (h || ':00')::time) AND t.id_serviser = s.id_serviser;
+        IF NOT FOUND THEN
+          INSERT INTO termin (datum_vrijeme, zauzet, id_serviser)
+            VALUES ((d + i) + (h || ':00')::time, false, s.id_serviser);
+        END IF;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+END$$;
+
+-- Quick checks (uncomment to run manually):
+-- SELECT COUNT(*) FROM termin WHERE id_serviser IS NULL;
+-- SELECT id_serviser, COUNT(*) AS cnt FROM termin GROUP BY id_serviser ORDER BY id_serviser;
+-- =====================================================

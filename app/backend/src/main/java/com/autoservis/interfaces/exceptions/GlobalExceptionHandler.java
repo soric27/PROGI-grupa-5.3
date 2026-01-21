@@ -31,8 +31,14 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
   }
 
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<?> handleIllegalState(IllegalStateException ex){
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<?> handleOther(Exception ex){
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message","Greška na serveru."));
+    String message = ex.getMessage() != null ? ex.getMessage() : "Greška na serveru.";
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", message));
   }
 }

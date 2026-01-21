@@ -47,24 +47,29 @@ function Navbar({ user }) {
           {/* Navbar sadržaj - responsive collapse */}
           <div className={`${isNavCollapsed ? 'collapse' : ''} navbar-collapse`} id="navbarNav">
             <ul className="navbar-nav ms-auto">
-              <li className="nav-item">
-                <Link 
-                  className="nav-link" 
-                  to="/" 
-                  onClick={() => setIsNavCollapsed(true)}
-                >
-                  Početna
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link 
-                  className="nav-link" 
-                  to="/vozila" 
-                  onClick={() => setIsNavCollapsed(true)}
-                >
-                  Vozila
-                </Link>
-              </li>
+              {!(user && (user.uloga === 'serviser' || user.uloga === 'administrator')) && (
+                <li className="nav-item">
+                  <Link 
+                    className="nav-link" 
+                    to="/" 
+                    onClick={() => setIsNavCollapsed(true)}
+                  >
+                    Početna
+                  </Link>
+                </li>
+              )}
+
+              {!(user && (user.uloga === 'serviser' || user.uloga === 'administrator')) && (
+                <li className="nav-item">
+                  <Link 
+                    className="nav-link" 
+                    to="/vozila" 
+                    onClick={() => setIsNavCollapsed(true)}
+                  >
+                    Vozila
+                  </Link>
+                </li>
+              )} 
               <li className="nav-item">
                 <Link 
                   className="nav-link" 
@@ -72,6 +77,53 @@ function Navbar({ user }) {
                   onClick={() => setIsNavCollapsed(true)}
                 >
                   Kontakt
+                </Link>
+              </li>
+
+              {!(user && user.uloga === 'administrator') && (
+                <li className="nav-item">
+                  <Link 
+                    className="nav-link" 
+                    to="/appointments" 
+                    onClick={() => setIsNavCollapsed(true)}
+                  >
+                    Termini
+                  </Link>
+                </li>
+              )}
+
+              {user && user.uloga === 'administrator' && (
+                <li className="nav-item">
+                  <Link className="nav-link" to="/servis" onClick={() => setIsNavCollapsed(true)}>Servis</Link>
+                </li>
+              )}
+
+              {user && user.uloga === 'administrator' && (
+                <li className="nav-item">
+                  <Link className="nav-link" to="/zamjene" onClick={() => setIsNavCollapsed(true)}>Zamjenska vozila</Link>
+                </li>
+              )}
+
+              {user && (user.uloga === 'serviser' || user.uloga === 'administrator') && (
+                <li className="nav-item">
+                  <Link className="nav-link" to="/statistika" onClick={() => setIsNavCollapsed(true)}>Statistika</Link>
+                </li>
+              )}
+
+              {user && user.uloga === 'administrator' && (
+                <li className="nav-item">
+                  <Link className="nav-link" to="/osobe" onClick={() => setIsNavCollapsed(true)}>Osobe</Link>
+                </li>
+              )}
+
+              <li className="nav-item">
+                <Link 
+                  className="nav-link" 
+                  to="/role-selection" 
+                  onClick={() => setIsNavCollapsed(true)}
+                  title="Ako već imaš token u sessionStorage, ovdje možeš ručno odabrati ulogu"
+                >
+                  Odabir uloge
                 </Link>
               </li>
 
@@ -107,7 +159,7 @@ function Navbar({ user }) {
             <h5 className="text-center mb-3">Prijava korisnika</h5>
             <div className="text-center">
               <a
-                href="https://autoservis-java.onrender.com/oauth2/authorization/google"
+                href={`${API_URL}/oauth2/authorization/google`}
                 className="btn btn-danger btn-lg"
                 onClick={() => setShowLogin(false)}
               >

@@ -90,7 +90,7 @@ public class StatsService {
     for (Termin t : termini) {
       if (t.getDatumVrijeme() != null) {
         LocalDate d = t.getDatumVrijeme().toLocalDate();
-        if ((d.isAfter(from) || d.isEqual(from)) && (d.isBefore(to) || d.isEqual(to)) && (t.getZauzet() == null || !t.getZauzet())) {
+        if ((d.isAfter(from) || d.isEqual(from)) && (d.isBefore(to) || d.isEqual(to)) && !t.isZauzet()) {
           availableSlots.add(t.getDatumVrijeme().toString());
           slotsCount++;
         }

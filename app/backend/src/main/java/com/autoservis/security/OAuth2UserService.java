@@ -1,14 +1,17 @@
 package com.autoservis.security;
 
-import com.autoservis.models.Osoba;
-import com.autoservis.repositories.OsobaRepository;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.client.userinfo.*;
-import org.springframework.security.oauth2.core.*;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import com.autoservis.models.Osoba;
+import com.autoservis.repositories.OsobaRepository;
 
 @Service
 public class OAuth2UserService extends DefaultOAuth2UserService {
@@ -25,9 +28,11 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
     String ime     = (String)a.getOrDefault("given_name", a.getOrDefault("name","Korisnik"));
     String prezime = (String)a.getOrDefault("family_name","");
 
-    Osoba user = osobe.findByOauthId(oauthId).orElseGet(() ->
-      osobe.save(new Osoba(ime.toString(), prezime, email, "korisnik", oauthId))
-    );
+    Osoba user = osobe.findByOauthId(oauthId).orElseGet(() -> {
+      // default role mapping: everyone is a regular user by default
+      String defaultRole = "korisnik";
+      return osobe.save(new Osoba(ime, prezime, email, defaultRole, oauthId));
+    });
 
     // mapiraj uloge na Spring authorities: ROLE_{ULOGA}
     String role = "ROLE_" + user.getUloga().toUpperCase(); // npr. ROLE_ADMINISTRATOR

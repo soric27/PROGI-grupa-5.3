@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 @Configuration
 public class JwtConfig {
     
-    @Value("${JWT_SECRET}")
+    @Value("${app.jwt-secret}")
     private String jwtSecret;
 
     @Bean

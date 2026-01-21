@@ -7,15 +7,15 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.SecurityFilterChain;
-
-import com.autoservis.security.OAuth2UserService;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.web.SecurityFilterChain; // added
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
-  @Value("${FRONTEND_URL}") private String frontendUrl;
+  @Value("${app.frontend-url}") private String frontendUrl;
   private final OAuth2UserService oAuth2UserService;
   public SecurityConfig(OAuth2UserService svc){ this.oAuth2UserService = svc; }
 
@@ -28,7 +28,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/oauth2/**", "/login/**",
                     "/api/auth/user", "/api/auth/logout",
-                    "/api/marke/**", "/api/modeli/**"
+                    "/api/marke/**", "/api/modeli/**",
+                    "/api/servis"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -37,8 +38,20 @@ public class SecurityConfig {
                 .successHandler(successHandler) // << ovdje
                 .failureUrl(frontendUrl + "?login=fail")
             )
-            .oauth2ResourceServer(o -> o.jwt()) // << token auth
+            .oauth2ResourceServer(o -> o.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))) // << token auth: map 'uloga' claim to ROLE_* authority
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // << bez server sesije
         return http.build();
+    }
+
+    // Map 'uloga' JWT claim -> ROLE_{ULOGA} authority so @PreAuthorize checks work with tokens
+    private JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            Object raw = jwt.getClaim("uloga");
+            if (raw == null) return java.util.Collections.emptyList();
+            String uloga = raw.toString();
+            return java.util.List.of(new SimpleGrantedAuthority("ROLE_" + uloga.toUpperCase()));
+        });
+        return converter;
     }
 }

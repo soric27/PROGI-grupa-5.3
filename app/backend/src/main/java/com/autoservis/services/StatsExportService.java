@@ -36,11 +36,11 @@ public class StatsExportService {
         cs.newLineAtOffset(50, 720);
         cs.showText("Broj zaprimljenih vozila: " + s.prijaveCount);
         cs.newLineAtOffset(0, -16);
-        cs.showText("Završeni popravci (count): " + s.completedRepairsCount);
+        cs.showText("Zavrseni popravci (count): " + s.completedRepairsCount);
         cs.newLineAtOffset(0, -16);
-        cs.showText("Prosječno trajanje popravka (dani): " + String.format("%.2f", s.averageRepairDays));
+        cs.showText("Prosjecno trajanje popravka (dani): " + String.format("%.2f", s.averageRepairDays));
         cs.newLineAtOffset(0, -16);
-        cs.showText("Zauzeće zamjenskih vozila (%): " + String.format("%.2f", s.replacementOccupancyPercent));
+        cs.showText("Zauzece zamjenskih vozila (%): " + String.format("%.2f", s.replacementOccupancyPercent));
         cs.newLineAtOffset(0, -16);
         cs.showText("Dostupni termini (count): " + s.availableSlotsCount);
         cs.endText();
@@ -93,3 +93,4 @@ public class StatsExportService {
     }
   }
 }
+
