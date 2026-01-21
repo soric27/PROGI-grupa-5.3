@@ -68,7 +68,10 @@ public class PrijavaController {
 
     PrijavaServisa prijava = new PrijavaServisa(v.get(), serviser, termin, dto.napomenaVlasnika);
 
-    // if termin was created, it needs to be saved via PrijavaService which will create a termin entity
+    org.slf4j.LoggerFactory.getLogger(PrijavaController.class)
+    .info("POST /api/prijave called: idVozilo={}, idServiser={}, terminDatum={}",
+        dto.idVozilo, dto.idServiser, dto.terminDatum); //dodano za log
+
     PrijavaServisa saved = prijavaService.createPrijava(prijava);
 
     return ResponseEntity.ok(saved);

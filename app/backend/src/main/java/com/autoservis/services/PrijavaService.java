@@ -41,6 +41,8 @@ public class PrijavaService {
 
   @Transactional
   public PrijavaServisa createPrijava(PrijavaServisa prijava) throws IOException {
+
+    logger.info("createPrijava CALLED");
     // if termin object provided but not persisted, persist it first
     if (prijava.getTermin() != null && prijava.getTermin().getIdTermin() == null) {
       Termin t = prijava.getTermin();
@@ -50,6 +52,8 @@ public class PrijavaService {
 
     // save prijava so it has id
     PrijavaServisa saved = prijavaRepo.save(prijava);
+
+    logger.info("createPrijava SAVED id={}", saved.getIdPrijava());
 
     // send simple confirmation email (no attachment)
     try {
