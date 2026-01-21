@@ -54,7 +54,12 @@ public class BrevoEmailService {
             HttpResponse<String> response =
                     httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            logger.info("Brevo email sent to {} status={}", to, response.statusCode());
+            int status = response.statusCode();
+            if (status >= 200 && status < 300) {
+                logger.info("Brevo email sent to {} status={}", to, status);
+            } else {
+                logger.error("Brevo email failed to {} status={} body={}", to, status, response.body());
+            }
 
         } catch (Exception ex) {
             logger.error("Brevo email failed to {}", to, ex);
@@ -62,6 +67,11 @@ public class BrevoEmailService {
     }
 
     private String escape(String s) {
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+        return s
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\r", "\\r")
+            .replace("\n", "\\n");
     }
+
 }
