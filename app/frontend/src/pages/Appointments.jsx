@@ -271,6 +271,19 @@ function Appointments({ user }) {
       setError(err?.response?.data?.message || 'Greška pri ažuriranju statusa.');
     }
   };
+  const handleCompletePrijava = async (idPrijava) => {
+    if (!window.confirm('Oznaciti servis zavrsenim i obrisati prijavu?')) return;
+    try {
+      await axios.post(`/api/appointments/prijave/${idPrijava}/complete`);
+      setMessage('Servis je zavrsen. Prijava je obrisana i korisnik je obavijesten.');
+      const r = await axios.get('/api/appointments/prijave/dodijeljene');
+      setDodijeljene(r.data);
+    } catch (err) {
+      console.error(err);
+      setError(err?.response?.data?.message || 'Greska pri zavrsetku servisa.');
+    }
+  };
+
 
   const handleAddNote = async () => {
     try {
@@ -570,7 +583,7 @@ function Appointments({ user }) {
                                 alert('Greška pri brisanju prijave');
                               }
                             }}>Obriši</button>
-                            {(user.idOsoba === p.idVlasnik || user.uloga === 'administrator') && (
+                            {!p.rezervacijaZamjene && (user.idOsoba === p.idVlasnik || user.uloga === 'administrator') && (
                               <button className="btn btn-sm btn-outline-secondary" onClick={()=>openZamjena(p)}>Rezerviraj zamjensko vozilo</button>
                             )}
                           </>
@@ -615,8 +628,7 @@ function Appointments({ user }) {
                         <button className="btn btn-sm btn-outline-secondary" onClick={()=>openEditTermin(p)}>Odgodi termin</button>
                         <button className="btn btn-sm btn-outline-primary" onClick={()=>setStatusModal({ idPrijava: p.idPrijava, noviStatus: p.status })}>Promijeni status</button>
                         <button className="btn btn-sm btn-outline-secondary" onClick={()=>setNoteModal({ idPrijava: p.idPrijava, opis: '' })}>Dodaj napomenu</button>
-                        <button className="btn btn-sm btn-outline-success" onClick={()=>downloadObrazac(p.idPrijava, 'predaja')}>Predaja PDF</button>
-                        <button className="btn btn-sm btn-outline-success" onClick={()=>downloadObrazac(p.idPrijava, 'preuzimanje')}>Preuzimanje PDF</button>
+                        <button className="btn btn-sm btn-outline-danger" onClick={()=>handleCompletePrijava(p.idPrijava)}>Zavrsi servis</button>
                       </div>
                     </li>
                   ))}
@@ -738,7 +750,7 @@ function Appointments({ user }) {
                                   alert('Greška pri brisanju prijave');
                                 }
                               }}>Obriši</button>
-                              {(user.idOsoba === p.idVlasnik || user.uloga === 'administrator') && (
+                              {!p.rezervacijaZamjene && (user.idOsoba === p.idVlasnik || user.uloga === 'administrator') && (
                                 <button className="btn btn-sm btn-outline-secondary" onClick={()=>openZamjena(p)}>Rezerviraj zamjensko vozilo</button>
                               )}
                             </>
@@ -777,8 +789,6 @@ function Appointments({ user }) {
                         </div>
                         <div className="d-flex gap-2 flex-wrap">
                           <button className="btn btn-sm btn-outline-primary" onClick={()=>openEdit(p)}>Uredi podatke vlasnika</button>
-                          <button className="btn btn-sm btn-outline-success" onClick={()=>downloadObrazac(p.idPrijava, 'predaja')}>Predaja PDF</button>
-                          <button className="btn btn-sm btn-outline-success" onClick={()=>downloadObrazac(p.idPrijava, 'preuzimanje')}>Preuzimanje PDF</button>
                         </div>
                       </li>
                     ))}
@@ -936,7 +946,6 @@ function Appointments({ user }) {
                   <select className="form-select" value={statusModal.noviStatus} onChange={e=>setStatusModal({...statusModal, noviStatus: e.target.value})}>
                     <option value="zaprimljeno">zaprimljeno</option>
                     <option value="u obradi">u obradi</option>
-                    <option value="završeno">završeno</option>
                     <option value="odgođeno">odgođeno</option>
                   </select>
                 </div>

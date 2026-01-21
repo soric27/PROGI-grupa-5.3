@@ -193,6 +193,11 @@ public class PrijavaServisaService {
         PrijavaServisa prijava = prijave.findById(idPrijave)
                 .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
 
+        var rezervacije = zamjenaService.getReservationsForPrijava(prijava.getIdPrijava());
+        for (var rez : rezervacije) {
+            zamjenaService.returnReservation(rez.getIdRezervacija());
+        }
+
         Termin termin = prijava.getTermin();
         if (termin != null) {
             termin.setZauzet(false);
@@ -211,6 +216,11 @@ public class PrijavaServisaService {
         Long ownerId = prijava.getVozilo().getOsoba().getIdOsoba();
         if (!isAdmin && !ownerId.equals(idOsobaPrincipal)) {
             throw new org.springframework.security.access.AccessDeniedException("Nemate ovlasti za brisanje ove prijave.");
+        }
+
+        var rezervacije = zamjenaService.getReservationsForPrijava(prijava.getIdPrijava());
+        for (var rez : rezervacije) {
+            zamjenaService.returnReservation(rez.getIdRezervacija());
         }
 
         Termin termin = prijava.getTermin();
@@ -263,8 +273,56 @@ public class PrijavaServisaService {
             throw new AccessDeniedException("Možete mijenjati status samo svojih prijava.");
         }
 
+        String normalized = noviStatus == null ? "" : noviStatus.trim().toLowerCase();
+        if (normalized.contains("zavr")) {
+            throw new IllegalArgumentException("Za zavrsetak koristite gumb 'Zavrsi servis'.");
+        }
+
         prijava.setStatus(noviStatus);
         prijave.save(prijava);
+    }
+
+    @Transactional
+    public void completePrijava(Long idPrijava, Long idOsobaPrincipal, boolean isAdmin) {
+        PrijavaServisa prijava = prijave.findById(idPrijava)
+                .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
+
+        if (!isAdmin) {
+            Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsobaPrincipal)
+                    .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
+            if (!prijava.getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
+                throw new AccessDeniedException("Mozete zavrsiti samo svoje prijave.");
+            }
+        }
+
+        String to = null;
+        if (prijava.getVozilo() != null && prijava.getVozilo().getOsoba() != null) {
+            to = prijava.getVozilo().getOsoba().getEmail();
+        }
+        if (to != null && !to.isBlank()) {
+            try {
+                java.io.File pdf = pdfService.generateObrazacPdf(prijava, "preuzimanje");
+                String subj = "Servis zavrsen - prijava " + prijava.getIdPrijava();
+                String body = "Vas servis je zavrsen. U privitku je obrazac s podacima o servisu.";
+                emailService.sendEmailWithAttachment(to, subj, body, pdf);
+                deleteFileQuietly(pdf);
+            } catch (Exception ex) {
+                throw new IllegalStateException("Slanje emaila nije uspjelo.", ex);
+            }
+        }
+
+        var rezervacije = zamjenaService.getReservationsForPrijava(prijava.getIdPrijava());
+        for (var rez : rezervacije) {
+            zamjenaService.returnReservation(rez.getIdRezervacija());
+        }
+
+        Termin termin = prijava.getTermin();
+        if (termin != null) {
+            termin.setZauzet(false);
+            termini.save(termin);
+        }
+
+        prijave.delete(prijava);
     }
 
     @Transactional
@@ -339,9 +397,19 @@ public class PrijavaServisaService {
             String subj = "Potvrda prijave servisa - " + prijava.getIdPrijava();
             String body = "Vasa prijava servisa je primljena. PDF je u privitku.";
             emailService.sendEmailWithAttachment(to, subj, body, pdf);
+            deleteFileQuietly(pdf);
         } catch (Exception ex) {
             org.slf4j.LoggerFactory.getLogger(PrijavaServisaService.class)
                 .error("Failed to send prijava email for prijava id {}", prijava.getIdPrijava(), ex);
+        }
+    }
+
+    private void deleteFileQuietly(java.io.File file) {
+        if (file == null) return;
+        try {
+            java.nio.file.Files.deleteIfExists(file.toPath());
+        } catch (Exception ex) {
+            // ignore delete failures
         }
     }
     

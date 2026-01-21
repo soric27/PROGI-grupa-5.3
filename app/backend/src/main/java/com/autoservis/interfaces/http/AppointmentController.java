@@ -110,6 +110,7 @@ public class AppointmentController {
         return ResponseEntity.ok(prijavaService.getPrijaveForServiser(idOsoba));
     }
     
+    
     // Promijeni status prijave - samo za SERVISERE
     @PatchMapping("/prijave/{id}/status")
     @PreAuthorize("hasAnyRole('SERVISER', 'ADMINISTRATOR')")
@@ -123,11 +124,31 @@ public class AppointmentController {
         
         Long idOsoba = jwt.getClaim("id_osoba");
         if (idOsoba == null) {
-            return ResponseEntity.status(401).body(Map.of("message", "Nevažeći token."));
+            return ResponseEntity.status(401).body(Map.of("message", "Nevazeci token."));
         }
         
         prijavaService.updateStatus(idPrijava, dto.noviStatus(), idOsoba);
-        return ResponseEntity.ok(Map.of("message", "Status prijave je ažuriran."));
+        return ResponseEntity.ok(Map.of("message", "Status prijave je azuriran."));
+    }
+
+    // Zavrsen servis: obavijesti korisnika i obrisi prijavu
+    @PostMapping("/prijave/{id}/complete")
+    @PreAuthorize("hasAnyRole('SERVISER', 'ADMINISTRATOR')")
+    public ResponseEntity<?> completePrijava(
+            @PathVariable("id") Long idPrijava,
+            @AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Niste prijavljeni."));
+        }
+
+        Long idOsoba = jwt.getClaim("id_osoba");
+        if (idOsoba == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Nevazeci token."));
+        }
+
+        boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+        prijavaService.completePrijava(idPrijava, idOsoba, isAdmin);
+        return ResponseEntity.ok(Map.of("message", "Prijava je zavrsena i obrisana."));
     }
 
     // Uredi podatke vlasnika prijave - samo za ADMINISTRATORA
@@ -214,6 +235,11 @@ public class AppointmentController {
 
         java.io.File pdf = prijavaService.markPredaja(idPrijava, idOsoba);
         byte[] bytes = java.nio.file.Files.readAllBytes(pdf.toPath());
+        try {
+            java.nio.file.Files.deleteIfExists(pdf.toPath());
+        } catch (java.io.IOException ex) {
+            // ignore delete failures
+        }
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=obrazac_predaja.pdf")
             .contentType(MediaType.APPLICATION_PDF)
@@ -234,6 +260,11 @@ public class AppointmentController {
 
         java.io.File pdf = prijavaService.markPreuzimanje(idPrijava, idOsoba);
         byte[] bytes = java.nio.file.Files.readAllBytes(pdf.toPath());
+        try {
+            java.nio.file.Files.deleteIfExists(pdf.toPath());
+        } catch (java.io.IOException ex) {
+            // ignore delete failures
+        }
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=obrazac_preuzimanje.pdf")
             .contentType(MediaType.APPLICATION_PDF)
