@@ -8,6 +8,8 @@ server:
         secure: false
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE}
   datasource:
