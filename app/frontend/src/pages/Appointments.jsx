@@ -523,8 +523,6 @@ function Appointments({ user }) {
                       <div className="text-danger small mt-1">Za odabrani dan nema termina.</div>
                     )}
                   </div>
-                    )}
-                  </div>
 
                   <div className="mb-3">
                     <label className="form-label">Odaberite termin</label>
