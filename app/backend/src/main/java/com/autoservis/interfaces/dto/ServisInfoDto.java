@@ -5,5 +5,6 @@ public record ServisInfoDto(
     String contactPhone,
     String aboutText,
     Double latitude,
-    Double longitude
+    Double longitude,
+    String workingHours
 ) {}

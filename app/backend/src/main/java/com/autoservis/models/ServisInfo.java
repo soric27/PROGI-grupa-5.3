@@ -29,14 +29,18 @@ public class ServisInfo {
     @Column(name = "longitude")
     private Double longitude;
 
+    @Column(name = "working_hours")
+    private String workingHours;
+
     protected ServisInfo() {}
 
-    public ServisInfo(String contactEmail, String contactPhone, String aboutText, Double latitude, Double longitude) {
+    public ServisInfo(String contactEmail, String contactPhone, String aboutText, Double latitude, Double longitude, String workingHours) {
         this.contactEmail = contactEmail;
         this.contactPhone = contactPhone;
         this.aboutText = aboutText;
         this.latitude = latitude;
         this.longitude = longitude;
+        this.workingHours = workingHours;
     }
 
     public Long getId() { return id; }
@@ -45,10 +49,12 @@ public class ServisInfo {
     public String getAboutText() { return aboutText; }
     public Double getLatitude() { return latitude; }
     public Double getLongitude() { return longitude; }
+    public String getWorkingHours() { return workingHours; }
 
     public void setContactEmail(String contactEmail) { this.contactEmail = contactEmail; }
     public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
     public void setAboutText(String aboutText) { this.aboutText = aboutText; }
     public void setLatitude(Double latitude) { this.latitude = latitude; }
     public void setLongitude(Double longitude) { this.longitude = longitude; }
+    public void setWorkingHours(String workingHours) { this.workingHours = workingHours; }
 }

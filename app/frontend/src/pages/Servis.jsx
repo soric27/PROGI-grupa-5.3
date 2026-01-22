@@ -3,7 +3,14 @@ import axios from 'axios';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 
 function Servis({ user }) {
-  const [info, setInfo] = useState({ contactEmail: '', contactPhone: '', aboutText: '', latitude: 45.815399, longitude: 15.966568 });
+  const [info, setInfo] = useState({
+    contactEmail: '',
+    contactPhone: '',
+    aboutText: '',
+    latitude: 45.815399,
+    longitude: 15.966568,
+    workingHours: ''
+  });
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(info);
   const [msg, setMsg] = useState('');
@@ -77,8 +84,18 @@ function Servis({ user }) {
 
       <div className="card p-3 mb-3">
         <h5>Kontakt</h5>
-        <p>Tel: {info.contactPhone}</p>
-        <p>Email: {info.contactEmail}</p>
+        <div>
+          <div><strong>Radno vrijeme</strong></div>
+          <div>{info.workingHours || '-'}</div>
+        </div>
+        <div className="mt-3">
+          <div><strong>Tel</strong></div>
+          <div>{info.contactPhone || '-'}</div>
+        </div>
+        <div className="mt-3">
+          <div><strong>Email</strong></div>
+          <div>{info.contactEmail || '-'}</div>
+        </div>
       </div>
 
       <div className="card p-3 mb-3">
@@ -96,6 +113,10 @@ function Servis({ user }) {
           <div className="mb-2">
             <label className="form-label">Telefon</label>
             <input name="contactPhone" value={form.contactPhone} onChange={handleChange} className="form-control" />
+          </div>
+          <div className="mb-2">
+            <label className="form-label">Radno vrijeme</label>
+            <input name="workingHours" value={form.workingHours || ''} onChange={handleChange} className="form-control" placeholder="npr. Pon-Pet 08:00-16:00" />
           </div>
           <div className="mb-2">
             <label className="form-label">O nama (HTML allowed)</label>
