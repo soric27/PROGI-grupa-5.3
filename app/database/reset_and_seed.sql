@@ -250,7 +250,7 @@ INSERT INTO kvar (naziv, opis) VALUES
 ('Ne radi kočnica', 'Kočnični sustav nije u funkciji ili je neispravan'),
 ('Razbiven prozor', 'Staklo prozora je oštećeno ili razbijeno'),
 ('Problem s motorom', 'Motor ne radi kako treba ili ima čudne zvukove'),
-('Istrošeni gumovi', 'Gumovi su istrošeni ili imaju pukotine'),
+('Istrošene gume', 'Gume su istrošene ili imaju pukotine'),
 ('Neispravan alarm', 'Alarm je neispravan ili ne funkcionira'),
 ('Odljev vode', 'Voda procuri unutar vozila'),
 ('Neispravan alternator', 'Alternator ne puni bateriju kako treba')
@@ -261,15 +261,22 @@ DECLARE
   s record;
   h int;
   i int;
+  m int;
 BEGIN
   FOR s IN SELECT id_serviser FROM serviser LOOP
     FOR h IN 9..16 LOOP
-      FOR i IN 0..6 LOOP
-        -- avoid duplicates
-        IF NOT EXISTS (SELECT 1 FROM termin t WHERE t.datum_vrijeme = ((d + i) + (h || ':00')::time) AND t.id_serviser = s.id_serviser) THEN
-          INSERT INTO termin (datum_vrijeme, zauzet, id_serviser)
-            VALUES ((d + i) + (h || ':00')::time, false, s.id_serviser);
-        END IF;
+      FOR m IN 0..1 LOOP
+        FOR i IN 0..6 LOOP
+          -- avoid duplicates
+          IF NOT EXISTS (
+            SELECT 1 FROM termin t
+            WHERE t.datum_vrijeme = ((d + i) + make_time(h, m * 30, 0))
+              AND t.id_serviser = s.id_serviser
+          ) THEN
+            INSERT INTO termin (datum_vrijeme, zauzet, id_serviser)
+              VALUES ((d + i) + make_time(h, m * 30, 0), false, s.id_serviser);
+          END IF;
+        END LOOP;
       END LOOP;
     END LOOP;
   END LOOP;

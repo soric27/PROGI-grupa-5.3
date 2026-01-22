@@ -65,22 +65,15 @@ public class StatsService {
     }
     s.averageRepairDays = avgDays;
 
-    // replacement occupancy: calculate total reserved days in range / (rangeDays * number of vehicles)
+    // replacement occupancy: current moment -> occupied vehicles / total vehicles
     List<ZamjenaVozilo> zamjene = zamjenaRepo.findAll();
-    long rangeDays = ChronoUnit.DAYS.between(from, to) + 1;
-    long totalVehicles = zamjene.size() == 0 ? 1 : zamjene.size();
+    long totalVehicles = zamjene.size();
+    long occupiedVehicles = zamjene.stream().filter(z -> z.getDostupno() != null && !z.getDostupno()).count();
 
-    long totalReservedDays = 0;
-    for (ZamjenaVozilo z : zamjene) {
-      List<RezervacijaZamjene> overlapping = rezervRepo.findOverlapping(z, from, to);
-      for (RezervacijaZamjene r : overlapping) {
-        LocalDate od = r.getDatumOd().isBefore(from) ? from : r.getDatumOd();
-        LocalDate doDate = r.getDatumDo().isAfter(to) ? to : r.getDatumDo();
-        long days = ChronoUnit.DAYS.between(od, doDate) + 1;
-        totalReservedDays += days;
-      }
+    double occupancy = 0.0;
+    if (totalVehicles > 0) {
+      occupancy = (occupiedVehicles / (double) totalVehicles) * 100.0;
     }
-    double occupancy = (totalReservedDays / (double)(rangeDays * totalVehicles)) * 100.0;
     s.replacementOccupancyPercent = Math.round(occupancy * 100.0) / 100.0; // 2 decimals
 
     // available slots: count of termin where zauzet=false and date within range

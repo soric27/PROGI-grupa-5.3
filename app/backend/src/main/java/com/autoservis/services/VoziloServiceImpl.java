@@ -1,6 +1,7 @@
 package com.autoservis.services;
 
 import java.util.List;
+import java.time.Year;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,10 @@ public class VoziloServiceImpl implements VoziloService {
   public VehicleDto addForOsoba(Long idOsoba, VehicleCreateDto dto) {
     Osoba o = osobe.findById(idOsoba).orElseThrow(() -> new IllegalArgumentException("Osoba ne postoji"));
     Model m = modeli.findById(dto.id_model()).orElseThrow(() -> new IllegalArgumentException("Model ne postoji"));
+    int currentYear = Year.now().getValue();
+    if (dto.godina_proizvodnje() == null || dto.godina_proizvodnje() < 1900 || dto.godina_proizvodnje() > currentYear) {
+      throw new IllegalArgumentException("Godina proizvodnje mora biti izmedu 1900 i " + currentYear + ".");
+    }
     Vozilo saved = vozila.save(new Vozilo(o, m, dto.registracija(), dto.godina_proizvodnje()));
     return VehicleMapper.toDto(saved);
   }

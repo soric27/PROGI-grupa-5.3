@@ -3,6 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function Vozila({ user }) {
+  const currentYear = new Date().getFullYear();
   const [vozila, setVozila] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedUserForAdmin, setSelectedUserForAdmin] = useState("");
@@ -23,12 +24,12 @@ function Vozila({ user }) {
         axios
           .get(`/api/vehicles/for/${selectedUserForAdmin}`, { withCredentials: true })
           .then((res) => setVozila(res.data))
-          .catch((err) => console.error("Greöka pri dohvaÊanju vozila:", err));
+          .catch((err) => console.error("Gre≈°ka pri dohvaƒáanju vozila:", err));
       } else {
         axios
           .get("/api/vehicles", { withCredentials: true })
           .then((res) => setVozila(res.data))
-          .catch((err) => console.error("Greöka pri dohvaÊanju vozila:", err));
+          .catch((err) => console.error("Gre≈°ka pri dohvaƒáanju vozila:", err));
       }
     }
   }, [user, selectedUserForAdmin]);
@@ -38,13 +39,13 @@ function Vozila({ user }) {
     axios
       .get("/api/marke")
       .then((res) => setMarke(res.data))
-      .catch((err) => console.error("Greöka pri dohvaÊanju marki:", err));
+      .catch((err) => console.error("Gre≈°ka pri dohvaƒáanju marki:", err));
 
     if (user && user.uloga === "administrator") {
       axios
         .get("/api/users")
         .then((r) => setUsers(r.data))
-        .catch((err) => console.error("Greöka pri dohvatu korisnika", err));
+        .catch((err) => console.error("Gre≈°ka pri dohvatu korisnika", err));
     }
   }, [user]);
 
@@ -54,7 +55,7 @@ function Vozila({ user }) {
       axios
         .get(`/api/modeli/${novoVozilo.id_marka}`)
         .then((res) => setModeli(res.data))
-        .catch((err) => console.error("Greöka pri dohvaÊanju modela:", err));
+        .catch((err) => console.error("Gre≈°ka pri dohvaƒáanju modela:", err));
     } else {
       setModeli([]);
     }
@@ -68,6 +69,12 @@ function Vozila({ user }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const yearNum = Number(novoVozilo.godina_proizvodnje);
+    if (!yearNum || yearNum < 1900 || yearNum > currentYear) {
+      alert(`Godina proizvodnje mora biti izmeƒëu 1900 i ${currentYear}.`);
+      return;
+    }
+
     try {
       if (user && user.uloga === "administrator" && selectedUserForAdmin) {
         await axios.post(
@@ -75,7 +82,7 @@ function Vozila({ user }) {
           {
             id_model: Number(novoVozilo.id_model),
             registracija: novoVozilo.registracija,
-            godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
+            godina_proizvodnje: yearNum,
           },
           { withCredentials: true }
         );
@@ -90,7 +97,7 @@ function Vozila({ user }) {
           {
             id_model: Number(novoVozilo.id_model),
             registracija: novoVozilo.registracija,
-            godina_proizvodnje: Number(novoVozilo.godina_proizvodnje),
+            godina_proizvodnje: yearNum,
           },
           { withCredentials: true }
         );
@@ -109,7 +116,7 @@ function Vozila({ user }) {
       });
       setShowForm(false);
     } catch (err) {
-      console.error("Greöka pri dodavanju vozila:", err);
+      console.error("Gre≈°ka pri dodavanju vozila:", err);
     }
   };
 
@@ -199,6 +206,8 @@ function Vozila({ user }) {
                   className="form-control"
                   value={novoVozilo.godina_proizvodnje}
                   onChange={handleChange}
+                  min="1900"
+                  max={currentYear}
                   required
                 />
               </div>
@@ -257,11 +266,11 @@ function Vozila({ user }) {
                           }
                         } catch (err) {
                           console.error(err);
-                          alert("Greöka pri brisanju vozila");
+                          alert("Gre≈°ka pri brisanju vozila");
                         }
                       }}
                     >
-                      Obriöi
+                      Obri≈°i
                     </button>
                   </td>
                 )}
@@ -270,7 +279,7 @@ function Vozila({ user }) {
           </tbody>
         </table>
       ) : (
-        <p>Joö niste prijavili nijedno vozilo.</p>
+        <p>Jo≈° niste prijavili nijedno vozilo.</p>
       )}
     </div>
   );

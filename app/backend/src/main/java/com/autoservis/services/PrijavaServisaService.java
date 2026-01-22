@@ -111,6 +111,10 @@ public class PrijavaServisaService {
         );
         
         // Dodaj odabrane kvarove ako su proslijeđeni
+        if (dto.idKvarovi() == null || dto.idKvarovi().isEmpty()) {
+            throw new IllegalArgumentException("Potrebno je odabrati barem jedan kvar.");
+        }
+
         if (dto.idKvarovi() != null && !dto.idKvarovi().isEmpty()) {
             java.util.List<Kvar> kvarovi = kvarRepository.findAllById(dto.idKvarovi());
             novaPrijava.setKvarovi(kvarovi);
@@ -170,6 +174,10 @@ public class PrijavaServisaService {
         );
         
         // Dodaj odabrane kvarove ako su proslijeđeni
+        if (dto.idKvarovi() == null || dto.idKvarovi().isEmpty()) {
+            throw new IllegalArgumentException("Potrebno je odabrati barem jedan kvar.");
+        }
+
         if (dto.idKvarovi() != null && !dto.idKvarovi().isEmpty()) {
             java.util.List<Kvar> kvarovi = kvarRepository.findAllById(dto.idKvarovi());
             novaPrijava.setKvarovi(kvarovi);

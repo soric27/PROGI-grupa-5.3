@@ -33,7 +33,7 @@ function setAuthHeader(token) {
 }
 
 function readTokenFromURL(location) {
-  // PodrŽf?‘–imo i query (?token=...) i hash (#token=...) za svaki slu‘²aj
+  // PodrÅ½f?â€˜â€“imo i query (?token=...) i hash (#token=...) za svaki sluâ€˜Ë›aj
   const q = new URLSearchParams(location.search);
   const fromQuery = q.get("token");
 
@@ -51,7 +51,7 @@ function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 0) na mount: ako postoji token u storageu -> stavi header i pokuŽf?‘–i dohvatiti usera
+  // 0) na mount: ako postoji token u storageu -> stavi header i pokuÅ½f?â€˜â€“i dohvatiti usera
   useEffect(() => {
     const saved = sessionStorage.getItem(TOKEN_KEY);
     if (saved) {
@@ -73,7 +73,7 @@ function AppRoutes() {
     }
   }, []);
 
-  // 1) obradi povratak s OAuth-a: pokupi token iz URL-a, spremi, postavi header, refetch usera, oŽf?‘–isti URL
+  // 1) obradi povratak s OAuth-a: pokupi token iz URL-a, spremi, postavi header, refetch usera, oÅ½f?â€˜â€“isti URL
   useEffect(() => {
     const token = readTokenFromURL(location);
 
@@ -127,4 +127,4 @@ export default function App() {
       <AppRoutes />
     </Router>
   );
-}
+}

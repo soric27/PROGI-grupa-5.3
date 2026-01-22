@@ -5,6 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 function Osobe({ user }) {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [novo, setNovo] = useState({ ime: "", prezime: "", email: "", uloga: "korisnik" });
@@ -67,6 +68,20 @@ function Osobe({ user }) {
     } finally { setLoading(false); }
   };
 
+  const handleSelfRoleChange = async (uloga) => {
+    if (!user) return;
+    if (!window.confirm(`Promijeniti vlastitu ulogu u "${uloga}"?`)) return;
+    setLoading(true); setError(""); setMessage("");
+    try {
+      await axios.patch(`/api/users/${user.idOsoba}`, { uloga });
+      setMessage(`Uloga je promijenjena u "${uloga}". Ponovno se prijavite kako bi promjena stupila na snagu.`);
+      await fetchUsers();
+    } catch (e) {
+      console.error(e);
+      setError(e?.response?.data || 'Greška pri ažuriranju uloge.');
+    } finally { setLoading(false); }
+  };
+
   const korisnici = users.filter(u => u.uloga === 'korisnik');
   const serviseri = users.filter(u => u.uloga === 'serviser');
 
@@ -77,7 +92,19 @@ function Osobe({ user }) {
   return (
     <div className="container">
       <h2>Osobe (Administracija)</h2>
+      {message && <div className="alert alert-success">{message}</div>}
       {error && <div className="alert alert-danger">{error}</div>}
+
+      <div className="card mb-4">
+        <div className="card-body">
+          <h5 className="card-title">Promijeni moju ulogu</h5>
+          <p className="text-muted">Ovo mijenja ulogu vašeg računa. Nakon promjene se ponovno prijavite.</p>
+          <div className="d-flex gap-2 flex-wrap">
+            <button className="btn btn-outline-primary" onClick={() => handleSelfRoleChange("korisnik")} disabled={loading}>Postavi na korisnika</button>
+            <button className="btn btn-outline-primary" onClick={() => handleSelfRoleChange("serviser")} disabled={loading}>Postavi na servisera</button>
+          </div>
+        </div>
+      </div>
 
       <div className="row">
         <div className="col-md-6">

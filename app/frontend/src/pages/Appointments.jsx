@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function Appointments({ user }) {
   const renderStatus = (status) => {
     const s = (status || "").toLowerCase();
     if (s.includes("obradi")) return <span className="badge bg-warning text-dark">U obradi</span>;
-    if (s.includes("zavrs")) return <span className="badge bg-success">Zavrseno</span>;
+    if (s.includes("zavr")) return <span className="badge bg-success">Završeno</span>;
     if (s.includes("odgod")) return <span className="badge bg-secondary">Odgođeno</span>;
     if (s) return <span className="badge bg-info text-dark">{status}</span>;
     return <span className="text-muted">-</span>;
@@ -25,6 +27,7 @@ function Appointments({ user }) {
   const [idVozilo, setIdVozilo] = useState("");
   const [selectedServiser, setSelectedServiser] = useState("");
   const [selectedTermin, setSelectedTermin] = useState("");
+  const [selectedDatum, setSelectedDatum] = useState(null);
   const [napomena, setNapomena] = useState("");
   const [selectedKvarovi, setSelectedKvarovi] = useState([]); // list of selected kvar IDs
   const [kvarovi, setKvarovi] = useState([]); // list of all available kvarovi
@@ -81,6 +84,11 @@ function Appointments({ user }) {
   }, [user]);
 
   useEffect(() => {
+    setSelectedDatum(null);
+    setSelectedTermin("");
+  }, [selectedServiser]);
+
+  useEffect(() => {
     // whenever serviser changes, fetch termini for that serviser (or all if none selected)
     if (!user) {
       setTermini([]);
@@ -130,6 +138,9 @@ function Appointments({ user }) {
   const handleBook = async (e) => {
     e.preventDefault();
     if (!user) { setError("Molimo prijavite se prije rezervacije termina."); return; }
+    if (!selectedTermin) { setError("Molimo odaberite termin."); return; }
+    if (!selectedKvarovi || selectedKvarovi.length === 0) { setError("Potrebno je odabrati barem jedan kvar."); return; }
+    if (selectedDatum && !availableDates.includes(toDateString(selectedDatum))) { setError("Za odabrani dan nema dostupnih termina."); return; }
     setLoading(true); setError(""); setMessage("");
 
     try {
@@ -154,7 +165,7 @@ function Appointments({ user }) {
           axios.get(`/api/appointments/termini?serviserId=${selectedServiser}`).then(r => setTermini(r.data)).catch(e => console.error(e));
         }
         // reset form
-        setIdVozilo(''); setSelectedServiser(''); setSelectedTermin(''); setNapomena(''); setSelectedKvarovi([]);
+        setIdVozilo(''); setSelectedServiser(''); setSelectedTermin(''); setSelectedDatum(null); setNapomena(''); setSelectedKvarovi([]);
         setZamjenaRequested(false); setZamjenaOd(''); setZamjenaDo(''); setSelectedZamjenaId(''); setAvailableZamjene([]);
       } else {
         await axios.post("/api/appointments/prijave", {
@@ -169,7 +180,7 @@ function Appointments({ user }) {
         });
 
         setMessage("Prijava poslana.");
-        setIdVozilo(""); setSelectedServiser(""); setSelectedTermin(""); setNapomena(""); setSelectedKvarovi([]);
+        setIdVozilo(""); setSelectedServiser(""); setSelectedTermin(""); setSelectedDatum(null); setNapomena(""); setSelectedKvarovi([]);
         // refresh my prijave
         const r = await axios.get("/api/appointments/prijave/moje");
         setMojePrijave(r.data);
@@ -272,15 +283,15 @@ function Appointments({ user }) {
     }
   };
   const handleCompletePrijava = async (idPrijava) => {
-    if (!window.confirm('Oznaciti servis zavrsenim i obrisati prijavu?')) return;
+    if (!window.confirm('Označiti servis završenim i obrisati prijavu?')) return;
     try {
       await axios.post(`/api/appointments/prijave/${idPrijava}/complete`);
-      setMessage('Servis je zavrsen. Prijava je obrisana i korisnik je obavijesten.');
+      setMessage('Servis je završen. Prijava je obrisana i korisnik je obaviješten.');
       const r = await axios.get('/api/appointments/prijave/dodijeljene');
       setDodijeljene(r.data);
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'Greska pri zavrsetku servisa.');
+      setError(err?.response?.data?.message || 'Greška pri završetku servisa.');
     }
   };
 
@@ -317,7 +328,7 @@ function Appointments({ user }) {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || "Greska pri generiranju obrasca.");
+      setError(err?.response?.data?.message || "Greška pri generiranju obrasca.");
     }
   };
 
@@ -389,6 +400,31 @@ function Appointments({ user }) {
     }
   };
 
+  const availableDates = Array.from(new Set(
+    termini
+      .map(t => (t && t.datumVrijeme ? t.datumVrijeme.slice(0, 10) : null))
+      .filter(Boolean)
+  )).sort();
+  const availableDateObjects = availableDates.map(d => new Date(`${d}T00:00:00`));
+  const minAvailableDate = availableDates.length > 0 ? availableDates[0] : "";
+  const maxAvailableDate = availableDates.length > 0 ? availableDates[availableDates.length - 1] : "";
+  const minDateObj = minAvailableDate ? new Date(`${minAvailableDate}T00:00:00`) : null;
+  const maxDateObj = maxAvailableDate ? new Date(`${maxAvailableDate}T00:00:00`) : null;
+
+  const toDateString = (d) => {
+    if (!d) return "";
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const timeSlotsForDate = (date) => (
+    termini
+      .filter(t => t && t.datumVrijeme && t.datumVrijeme.slice(0, 10) === date)
+      .sort((a, b) => new Date(a.datumVrijeme) - new Date(b.datumVrijeme))
+  );
+
   if (!user) {
     return (
       <div className="container mt-5 text-center">
@@ -454,13 +490,65 @@ function Appointments({ user }) {
                       {serviseri.map(s => <option key={s.idServiser} value={s.idServiser}>{s.imePrezime}</option>)}
                     </select>
                   </div>
+                  <div className="mb-3">
+                    <label className="form-label">Odaberite dan</label>
+                    <DatePicker
+                      selected={selectedDatum}
+                      onChange={(date) => {
+                        if (!date) {
+                          setSelectedDatum(null);
+                          setSelectedTermin("");
+                          return;
+                        }
+                        const dateStr = toDateString(date);
+                        if (!availableDates.includes(dateStr)) {
+                          setSelectedDatum(null);
+                          setSelectedTermin("");
+                          setError("Za odabrani dan nema dostupnih termina.");
+                          return;
+                        }
+                        setError("");
+                        setSelectedDatum(date);
+                        setSelectedTermin("");
+                      }}
+                      className="form-control"
+                      placeholderText="Odaberite dan"
+                      includeDates={availableDateObjects}
+                      minDate={minDateObj}
+                      maxDate={maxDateObj}
+                      disabled={availableDates.length === 0}
+                      dateFormat="dd.MM.yyyy"
+                    />
+                    {selectedDatum && !availableDates.includes(toDateString(selectedDatum)) && (
+                      <div className="text-danger small mt-1">Za odabrani dan nema termina.</div>
+                    )}
+                  </div>
+                    )}
+                  </div>
 
                   <div className="mb-3">
                     <label className="form-label">Odaberite termin</label>
-                    <select className="form-select" value={selectedTermin} onChange={e=>setSelectedTermin(e.target.value)} required>
-                      <option value="">-- odaberite --</option>
-                      {termini.map(t => <option key={t.idTermin} value={t.idTermin}>{new Date(t.datumVrijeme).toLocaleString()}</option>)}
-                    </select>
+                    {selectedDatum ? (
+                      <div className="border rounded p-2 bg-light">
+                        <div className="d-flex flex-wrap gap-2">
+                          {timeSlotsForDate(toDateString(selectedDatum)).map(t => (
+                            <button
+                              key={t.idTermin}
+                              type="button"
+                              className={`btn btn-sm ${String(selectedTermin) === String(t.idTermin) ? "btn-primary" : "btn-outline-primary"}`}
+                              onClick={() => setSelectedTermin(String(t.idTermin))}
+                            >
+                              {new Date(t.datumVrijeme).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </button>
+                          ))}
+                          {timeSlotsForDate(toDateString(selectedDatum)).length === 0 && (
+                            <div className="text-muted">Nema termina za odabrani dan.</div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-muted">Prvo odaberite dan u kalendaru.</div>
+                    )}
                   </div>
 
                   <div className="mb-3">
@@ -628,7 +716,7 @@ function Appointments({ user }) {
                         <button className="btn btn-sm btn-outline-secondary" onClick={()=>openEditTermin(p)}>Odgodi termin</button>
                         <button className="btn btn-sm btn-outline-primary" onClick={()=>setStatusModal({ idPrijava: p.idPrijava, noviStatus: p.status })}>Promijeni status</button>
                         <button className="btn btn-sm btn-outline-secondary" onClick={()=>setNoteModal({ idPrijava: p.idPrijava, opis: '' })}>Dodaj napomenu</button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={()=>handleCompletePrijava(p.idPrijava)}>Zavrsi servis</button>
+                        <button className="btn btn-sm btn-outline-danger" onClick={()=>handleCompletePrijava(p.idPrijava)}>Završi servis</button>
                       </div>
                     </li>
                   ))}
@@ -686,13 +774,95 @@ function Appointments({ user }) {
                         {serviseri.map(s => <option key={s.idServiser} value={s.idServiser}>{s.imePrezime}</option>)}
                       </select>
                     </div>
+                  <div className="mb-3">
+                    <label className="form-label">Odaberite dan</label>
+                    <DatePicker
+                      selected={selectedDatum}
+                      onChange={(date) => {
+                        if (!date) {
+                          setSelectedDatum(null);
+                          setSelectedTermin("");
+                          return;
+                        }
+                        const dateStr = toDateString(date);
+                        if (!availableDates.includes(dateStr)) {
+                          setSelectedDatum(null);
+                          setSelectedTermin("");
+                          setError("Za odabrani dan nema dostupnih termina.");
+                          return;
+                        }
+                        setError("");
+                        setSelectedDatum(date);
+                        setSelectedTermin("");
+                      }}
+                      className="form-control"
+                      placeholderText="Odaberite dan"
+                      includeDates={availableDateObjects}
+                      minDate={minDateObj}
+                      maxDate={maxDateObj}
+                      disabled={availableDates.length === 0}
+                      dateFormat="dd.MM.yyyy"
+                    />
+                    {selectedDatum && !availableDates.includes(toDateString(selectedDatum)) && (
+                      <div className="text-danger small mt-1">Za odabrani dan nema termina.</div>
+                    )}
+                  </div>
+                    )}
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Odaberite termin</label>
+                    {selectedDatum ? (
+                      <div className="border rounded p-2 bg-light">
+                        <div className="d-flex flex-wrap gap-2">
+                          {timeSlotsForDate(toDateString(selectedDatum)).map(t => (
+                            <button
+                              key={t.idTermin}
+                              type="button"
+                              className={`btn btn-sm ${String(selectedTermin) === String(t.idTermin) ? "btn-primary" : "btn-outline-primary"}`}
+                              onClick={() => setSelectedTermin(String(t.idTermin))}
+                            >
+                              {new Date(t.datumVrijeme).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </button>
+                          ))}
+                          {timeSlotsForDate(toDateString(selectedDatum)).length === 0 && (
+                            <div className="text-muted">Nema termina za odabrani dan.</div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-muted">Prvo odaberite dan u kalendaru.</div>
+                    )}
+                  </div>
 
                     <div className="mb-3">
-                      <label className="form-label">Odaberite termin</label>
-                      <select className="form-select" value={selectedTermin} onChange={e=>setSelectedTermin(e.target.value)} required>
-                        <option value="">-- odaberite --</option>
-                        {termini.map(t => <option key={t.idTermin} value={t.idTermin}>{new Date(t.datumVrijeme).toLocaleString()}</option>)}
-                      </select>
+                      <label className="form-label">Odaberite kvarove (defekte)</label>
+                      <div className="border rounded p-2">
+                        {kvarovi.length === 0 ? (
+                          <div className="text-muted">Nema dostupnih kvarova</div>
+                        ) : (
+                          kvarovi.map(kvar => (
+                            <div key={kvar.id_kvar} className="form-check">
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id={`kvar-${kvar.id_kvar}-admin`}
+                                checked={selectedKvarovi.includes(kvar.id_kvar)}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    setSelectedKvarovi([...selectedKvarovi, kvar.id_kvar]);
+                                  } else {
+                                    setSelectedKvarovi(selectedKvarovi.filter(k => k !== kvar.id_kvar));
+                                  }
+                                }}
+                              />
+                              <label className="form-check-label" htmlFor={`kvar-${kvar.id_kvar}-admin`}>
+                                <strong>{kvar.naziv}</strong> {kvar.opis && `- ${kvar.opis}`}
+                              </label>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
 
                     <div className="mb-3">

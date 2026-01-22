@@ -25,7 +25,7 @@ function Statistika({ user }) {
       });
       setStats(resp.data);
     } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "Greska pri dohvatu statistike.";
+      const msg = err?.response?.data?.message || err?.message || "Greška pri dohvatu statistike.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -49,7 +49,7 @@ function Statistika({ user }) {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "Greska pri izvozu.";
+      const msg = err?.response?.data?.message || err?.message || "Greška pri izvozu.";
       setError(msg);
     }
   };
@@ -80,7 +80,7 @@ function Statistika({ user }) {
           </div>
           <div className="col-md-4 d-flex gap-2">
             <button className="btn btn-primary" onClick={fetchStats} disabled={loading}>
-              {loading ? "Ucitavanje..." : "Osvjezi"}
+              {loading ? "Učitavanje..." : "Osvježi"}
             </button>
             <button className="btn btn-outline-secondary" onClick={() => download("pdf")}>PDF</button>
             <button className="btn btn-outline-secondary" onClick={() => download("xml")}>XML</button>
@@ -93,9 +93,9 @@ function Statistika({ user }) {
       {stats && (
         <div className="card p-3">
           <div><strong>Broj zaprimljenih vozila:</strong> {stats.prijaveCount}</div>
-          <div><strong>Zavrseni popravci:</strong> {stats.completedRepairsCount}</div>
-          <div><strong>Prosjecno trajanje popravka (dani):</strong> {Number(stats.averageRepairDays).toFixed(2)}</div>
-          <div><strong>Zauzece zamjenskih vozila (%):</strong> {Number(stats.replacementOccupancyPercent).toFixed(2)}</div>
+          <div><strong>Završeni popravci:</strong> {stats.completedRepairsCount}</div>
+          <div><strong>Prosječno trajanje popravka (dani):</strong> {Number(stats.averageRepairDays).toFixed(2)}</div>
+          <div><strong>Zauzeće zamjenskih vozila (%):</strong> {Number(stats.replacementOccupancyPercent).toFixed(2)}</div>
           <div><strong>Dostupni termini (broj):</strong> {stats.availableSlotsCount}</div>
         </div>
       )}
