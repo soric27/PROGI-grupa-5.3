@@ -1,10 +1,10 @@
 services:
   - type: web
     name: autoservis-backend
-    env: java
+    env: docker
     plan: free
-    buildCommand: mvn -f app/backend/pom.xml -DskipTests clean package
-    startCommand: java -jar app/backend/target/backend-0.0.1.jar
+    rootDir: app/backend
+    dockerfilePath: Dockerfile
     envVars:
       - key: JAVA_VERSION
         value: "17"
