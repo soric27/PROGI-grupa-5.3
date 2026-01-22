@@ -114,12 +114,7 @@ function Appointments({ user }) {
       axios.get(`/api/vehicles/for/${selectedUserForAdmin}`).then(r => setVehicles(r.data)).catch(e => console.error(e));
       axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`).then(r => setMojePrijave(r.data)).catch(e => console.error(e));
     }
-    // re-fetch available zamjene if user changed date fields while admin switched context
-    if (zamjenaOd && zamjenaDo) {
-      axios.get(`/api/zamjene?from=${zamjenaOd}&to=${zamjenaDo}`).then(r => setAvailableZamjene(r.data)).catch(e => console.error(e));
-    } else {
-      setAvailableZamjene([]);
-    }  }, [selectedServiser, user, zamjenaOd, zamjenaDo]);
+  }, [selectedServiser, user, zamjenaOd, zamjenaDo, selectedUserForAdmin]);
 
   // Poll 'moje prijave' for korisnik every 10s so serviser notes appear without manual refresh
   useEffect(() => {
@@ -196,8 +191,6 @@ function Appointments({ user }) {
       setError(err?.response?.data?.message || "Greška pri slanju prijave.");
     } finally { setLoading(false); }
 
-    // Show user where to check status
-    setMessage("Prijava poslana. Provjerite 'Moje prijave' za status prijave.");
   };
 
   const openEdit = (p) => {
@@ -803,8 +796,6 @@ function Appointments({ user }) {
                     />
                     {selectedDatum && !availableDates.includes(toDateString(selectedDatum)) && (
                       <div className="text-danger small mt-1">Za odabrani dan nema termina.</div>
-                    )}
-                  </div>
                     )}
                   </div>
 
