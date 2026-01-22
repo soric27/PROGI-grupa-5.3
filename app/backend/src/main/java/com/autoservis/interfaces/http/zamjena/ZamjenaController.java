@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.autoservis.models.RezervacijaZamjene;
 import com.autoservis.models.ZamjenaVozilo;
@@ -86,6 +87,7 @@ public class ZamjenaController {
   }
 
   @PostMapping
+  @Transactional
   public ResponseEntity<?> createZamjena(@RequestBody CreateZamjenaDto dto, @AuthenticationPrincipal Jwt jwt) {
     if (jwt == null) return ResponseEntity.status(401).body("Niste prijavljeni.");
     boolean isAdmin = "administrator".equalsIgnoreCase(claimAsString(jwt, "uloga"));
