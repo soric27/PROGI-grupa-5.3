@@ -28,9 +28,20 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
+    @Value("${app.admin-emails:}")
+    private String adminEmails;
+
     public OAuth2SuccessHandler(JwtEncoder encoder, OsobaRepository osobaRepository) {
         this.encoder = encoder;
         this.osobaRepository = osobaRepository;
+    }
+
+    private boolean isBootstrapAdmin(String email) {
+        if (email == null || email.isBlank() || adminEmails == null || adminEmails.isBlank()) return false;
+        for (String e : adminEmails.split(",")) {
+            if (email.equalsIgnoreCase(e.trim())) return true;
+        }
+        return false;
     }
 
     @Override
@@ -44,11 +55,17 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String oauthId = (String) user.getAttributes().getOrDefault("sub", "");
 
         // Dohvati ili kreiraj osobu
+        boolean shouldBeAdmin = isBootstrapAdmin(email);
         Osoba osoba = osobaRepository.findByEmail(email)
             .orElseGet(() -> {
-                Osoba novaOsoba = new Osoba(ime, prez, email, "korisnik", oauthId);
+                String role = shouldBeAdmin ? "administrator" : "korisnik";
+                Osoba novaOsoba = new Osoba(ime, prez, email, role, oauthId);
                 return osobaRepository.save(novaOsoba);
             });
+        if (shouldBeAdmin && !"administrator".equalsIgnoreCase(osoba.getUloga())) {
+            osoba.setUloga("administrator");
+            osoba = osobaRepository.save(osoba);
+        }
 
         Long idOsoba = osoba.getIdOsoba();
 
@@ -68,7 +85,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String token = encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
 
         // Pošalji korisnika na stranicu za izbor uloge tako da može odmah odabrati serviser/korisnik
-        String redirect = frontendUrl + "/role-selection?token=" + token;
+        String redirect = frontendUrl + "/?token=" + token;
         try {
             response.sendRedirect(redirect);
         } catch (Exception e) {

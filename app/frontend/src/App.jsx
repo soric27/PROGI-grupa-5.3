@@ -33,7 +33,7 @@ function setAuthHeader(token) {
 }
 
 function readTokenFromURL(location) {
-  // PodrÅ¾imo i query (?token=...) i hash (#token=...) za svaki sluÄaj
+  // PodrŽf?‘–imo i query (?token=...) i hash (#token=...) za svaki slu‘²aj
   const q = new URLSearchParams(location.search);
   const fromQuery = q.get("token");
 
@@ -51,7 +51,7 @@ function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 0) na mount: ako postoji token u storageu -> stavi header i pokuÅ¡aj dohvatiti usera
+  // 0) na mount: ako postoji token u storageu -> stavi header i pokuŽf?‘–i dohvatiti usera
   useEffect(() => {
     const saved = sessionStorage.getItem(TOKEN_KEY);
     if (saved) {
@@ -73,13 +73,11 @@ function AppRoutes() {
     }
   }, []);
 
-  // 1) obradi povratak s OAuth-a: pokupi token iz URL-a, spremi, postavi header, refetch usera, oÄisti URL
+  // 1) obradi povratak s OAuth-a: pokupi token iz URL-a, spremi, postavi header, refetch usera, oŽf?‘–isti URL
   useEffect(() => {
     const token = readTokenFromURL(location);
 
-    // Ako smo na stranici za odabir uloge (role-selection), ne procesiramo token automatski
-    // jer Å¾elimo da RoleSelection.jsx dohvati token iz query parametra.
-    if (token && location.pathname !== "/role-selection") {
+    if (token) {
       sessionStorage.setItem(TOKEN_KEY, token);
       setAuthHeader(token);
 

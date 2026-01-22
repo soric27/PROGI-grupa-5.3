@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: autoservis-backend
+    env: java
+    plan: free
+    buildCommand: mvn -f app/backend/pom.xml -DskipTests clean package
+    startCommand: java -jar app/backend/target/backend-0.0.1.jar
+    envVars:
+      - key: JAVA_VERSION
+        value: "17"
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://<host>:<port>/<db>
+      - key: SPRING_DATASOURCE_USERNAME
+        value: <user>
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: <pass>
+      - key: JWT_SECRET
+        value: <long_32+_chars_secret>
+      - key: FRONTEND_URL
+        value: https://autoservis-frontend.onrender.com
+      - key: GOOGLE_CLIENT_ID
+        value: <google_client_id>
+      - key: GOOGLE_CLIENT_SECRET
+        value: <google_client_secret>
+      - key: GOOGLE_CALLBACK_URL
+        value: https://autoservis-backend.onrender.com/login/oauth2/code/google
+      - key: BREVO_API_KEY
+        value: <brevo_api_key>
+      - key: BREVO_FROM_EMAIL
+        value: <verified_sender_email>
+      - key: ADMIN_EMAILS
+        value: soric.ivano@gmail.com
+
+  - type: web
+    name: autoservis-frontend
+    env: static
+    plan: free
+    buildCommand: cd app/frontend && npm install && npm run build
+    staticPublishPath: app/frontend/build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://autoservis-backend.onrender.com
+      - key: REACT_APP_GOOGLE_MAPS_API_KEY
+        value: <google_maps_api_key>

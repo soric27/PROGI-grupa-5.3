@@ -20,6 +20,7 @@ import jakarta.validation.constraints.NotBlank;
 
 @RestController
 @RequestMapping("/api/auth")
+@Deprecated
 public class RoleSelectionController {
 
     private final OsobaRepository osobaRepository;

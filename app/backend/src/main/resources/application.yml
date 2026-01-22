@@ -49,8 +49,13 @@ spring:
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
   jwt-secret: ${JWT_SECRET}
+  admin-emails: ${ADMIN_EMAILS}
   storage:
     pdf-dir: ${PDF_STORAGE:./data/pdfs}
+
+brevo:
+  api-key: ${BREVO_API_KEY}
+  from-email: ${BREVO_FROM_EMAIL}
 
 # mail configuration moved under the main 'spring' block to avoid duplication
 # configure via environment variables: MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD
