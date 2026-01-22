@@ -33,9 +33,8 @@ services:
       - key: ADMIN_EMAILS
         value: soric.ivano@gmail.com
 
-  - type: static
+  - type: static_site
     name: autoservis-frontend
-    env: static
     buildCommand: cd app/frontend && npm install && npm run build
     staticPublishPath: app/frontend/build
     envVars:
