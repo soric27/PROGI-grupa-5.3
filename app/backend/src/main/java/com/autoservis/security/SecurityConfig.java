@@ -36,7 +36,7 @@ public class SecurityConfig {
             .oauth2Login(o -> o
                 .userInfoEndpoint(ui -> ui.userService(oAuth2UserService))
                 .successHandler(successHandler) // << ovdje
-                .failureUrl(frontendUrl + "?login=fail")
+                .failureUrl("/?login=fail")
             )
             .oauth2ResourceServer(o -> o.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))) // << token auth: map 'uloga' claim to ROLE_* authority
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // << bez server sesije
