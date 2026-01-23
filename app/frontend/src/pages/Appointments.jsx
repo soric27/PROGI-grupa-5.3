@@ -8,8 +8,8 @@ function Appointments({ user }) {
   const renderStatus = (status) => {
     const s = (status || "").toLowerCase();
     if (s.includes("obradi")) return <span className="badge bg-warning text-dark">U obradi</span>;
-    if (s.includes("zavr")) return <span className="badge bg-success">ZavrĹˇeno</span>;
-    if (s.includes("odgod")) return <span className="badge bg-secondary">OdgoÄ‘eno</span>;
+    if (s.includes("zavr")) return <span className="badge bg-success">Završeno</span>;
+    if (s.includes("odgod")) return <span className="badge bg-secondary">Odgođeno</span>;
     if (s) return <span className="badge bg-info text-dark">{status}</span>;
     return <span className="text-muted">-</span>;
   };
@@ -49,6 +49,8 @@ function Appointments({ user }) {
   const [zamjenaModal, setZamjenaModal] = useState(null); // { idPrijava, datumOd, datumDo, available: [], selectedZamjena }
   const [statusModal, setStatusModal] = useState(null); // { idPrijava, noviStatus }
   const [noteModal, setNoteModal] = useState(null); // { idPrijava, opis }
+  const [predajaObrasci, setPredajaObrasci] = useState([]);
+  const [preuzimanjeObrasci, setPreuzimanjeObrasci] = useState([]);
 
   useEffect(() => {
     if (!user) {
@@ -72,14 +74,22 @@ function Appointments({ user }) {
     if (user && user.uloga === "administrator") {
       axios.get('/api/users')
         .then(r => setUsers(r.data))
-        .catch(e => { console.error(e); setError('GreĹˇka pri dohvatu korisnika: ' + (e?.response?.data?.message || e.message)); });
+        .catch(e => { console.error(e); setError('Greška pri dohvatu korisnika: ' + (e?.response?.data?.message || e.message)); });
     }
 
     // if serviser, fetch dodijeljene
     if (user && (user.uloga === "serviser" || user.uloga === "administrator")) {
       axios.get("/api/appointments/prijave/dodijeljene")
         .then(r => setDodijeljene(r.data))
-        .catch(e => { console.error(e); setError('GreĹˇka pri dohvatu dodijeljenih prijava: ' + (e?.response?.data?.message || e.message)); });
+        .catch(e => { console.error(e); setError('Greška pri dohvatu dodijeljenih prijava: ' + (e?.response?.data?.message || e.message)); });
+
+      axios.get("/api/appointments/obrasci?tip=predaja")
+        .then(r => setPredajaObrasci(r.data))
+        .catch(e => { console.error(e); setError('Greška pri dohvatu obrazaca predaje: ' + (e?.response?.data?.message || e.message)); });
+
+      axios.get("/api/appointments/obrasci?tip=preuzimanje")
+        .then(r => setPreuzimanjeObrasci(r.data))
+        .catch(e => { console.error(e); setError('Greška pri dohvatu obrazaca završetka: ' + (e?.response?.data?.message || e.message)); });
     }
   }, [user]);
 
@@ -134,7 +144,6 @@ function Appointments({ user }) {
     e.preventDefault();
     if (!user) { setError("Molimo prijavite se prije rezervacije termina."); return; }
     if (!selectedTermin) { setError("Molimo odaberite termin."); return; }
-    if (!selectedKvarovi || selectedKvarovi.length === 0) { setError("Potrebno je odabrati barem jedan kvar."); return; }
     if (selectedDatum && !availableDates.includes(toDateString(selectedDatum))) { setError("Za odabrani dan nema dostupnih termina."); return; }
     if (zamjenaRequested) {
       if (!zamjenaOd || !zamjenaDo) { setError("Molimo odaberite raspon datuma za zamjensko vozilo."); return; }
@@ -160,7 +169,7 @@ function Appointments({ user }) {
         // refresh admin view of that user's prijave
         const r = await axios.get(`/api/appointments/prijave/user?userId=${selectedUserForAdmin}`);
         setMojePrijave(r.data);
-        // OsvjeĹľi dostupne termine nakon booking-a
+        // Osvježi dostupne termine nakon booking-a
         if (selectedServiser) {
           axios.get(`/api/appointments/termini?serviserId=${selectedServiser}`).then(r => setTermini(r.data)).catch(e => console.error(e));
         }
@@ -184,7 +193,7 @@ function Appointments({ user }) {
         // refresh my prijave
         const r = await axios.get("/api/appointments/prijave/moje");
         setMojePrijave(r.data);
-        // OsvjeĹľi dostupne termine nakon booking-a
+        // Osvježi dostupne termine nakon booking-a
         if (selectedServiser) {
           axios.get(`/api/appointments/termini?serviserId=${selectedServiser}`).then(r => setTermini(r.data)).catch(e => console.error(e));
         }
@@ -193,7 +202,7 @@ function Appointments({ user }) {
       }
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || "GreĹˇka pri slanju prijave.");
+      setError(err?.response?.data?.message || "Greška pri slanju prijave.");
     } finally { setLoading(false); }
 
   };
@@ -210,14 +219,14 @@ function Appointments({ user }) {
         prezime: editing.prezime || null,
         email: editing.email || null
       });
-      setMessage("Podaci su aĹľurirani.");
+      setMessage("Podaci su ažurirani.");
       setEditing(null);
       // refresh dodijeljene
       const r = await axios.get("/api/appointments/prijave/dodijeljene");
       setDodijeljene(r.data);
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || "GreĹˇka pri aĹľuriranju.");
+      setError(err?.response?.data?.message || "Greška pri ažuriranju.");
     }
   };
 
@@ -226,7 +235,7 @@ function Appointments({ user }) {
     const modal = { idPrijava: p.idPrijava, available: [], selectedSlot: '', currentTermin: p.datumTermina };
     setMessage(""); setError("");
     try {
-      // Dohvati slobodne termine za tog servisera (isti kao Ĺˇto korisnik vidi)
+      // Dohvati slobodne termine za tog servisera (isti kao što korisnik vidi)
       if (p.idServiser) {
         const r = await axios.get(`/api/appointments/termini?serviserId=${p.idServiser}`);
         if (modal.currentTermin) {
@@ -251,19 +260,19 @@ function Appointments({ user }) {
       const id = editTerminModal.idPrijava;
       // selectedSlot je ISO datetime format
       await axios.put(`/api/prijave/${id}`, { newTerminDatum: editTerminModal.selectedSlot });
-      setMessage('Termin je aĹľuriran.');
+      setMessage('Termin je ažuriran.');
       setEditTerminModal(null);
       
-      // OsvjeĹľi sve relevantne liste
+      // Osvježi sve relevantne liste
       const r = await axios.get("/api/appointments/prijave/dodijeljene");
       setDodijeljene(r.data);
       
-      // OsvjeĹľi i korisniku njegovu listu ako se termin promijenio
+      // Osvježi i korisniku njegovu listu ako se termin promijenio
       const myApps = await axios.get("/api/appointments/prijave/moje");
       setMojePrijave(myApps.data);
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'GreĹˇka pri aĹľuriranju termina.');
+      setError(err?.response?.data?.message || 'Greška pri ažuriranju termina.');
     }
   };
 
@@ -271,25 +280,27 @@ function Appointments({ user }) {
     try {
       const id = statusModal.idPrijava;
       await axios.patch(`/api/appointments/prijave/${id}/status`, { noviStatus: statusModal.noviStatus });
-      setMessage('Status je aĹľuriran.');
+      setMessage('Status je ažuriran.');
       setStatusModal(null);
       const r = await axios.get('/api/appointments/prijave/dodijeljene');
       setDodijeljene(r.data);
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'GreĹˇka pri aĹľuriranju statusa.');
+      setError(err?.response?.data?.message || 'Greška pri ažuriranju statusa.');
     }
   };
   const handleCompletePrijava = async (idPrijava) => {
-    if (!window.confirm('OznaÄŤiti servis zavrĹˇenim i obrisati prijavu?')) return;
+    if (!window.confirm('Označiti servis završenim i obrisati prijavu?')) return;
     try {
       await axios.post(`/api/appointments/prijave/${idPrijava}/complete`);
-      setMessage('Servis je zavrĹˇen. Prijava je obrisana i korisnik je obavijeĹˇten.');
+      setMessage('Servis je završen. Prijava je obrisana i korisnik je obaviješten.');
       const r = await axios.get('/api/appointments/prijave/dodijeljene');
       setDodijeljene(r.data);
+      const preuzimanja = await axios.get("/api/appointments/obrasci?tip=preuzimanje");
+      setPreuzimanjeObrasci(preuzimanja.data);
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'GreĹˇka pri zavrĹˇetku servisa.');
+      setError(err?.response?.data?.message || 'Greška pri završetku servisa.');
     }
   };
 
@@ -304,7 +315,7 @@ function Appointments({ user }) {
       setDodijeljene(r.data);
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'GreĹˇka pri dodavanju napomene.');
+      setError(err?.response?.data?.message || 'Greška pri dodavanju napomene.');
     }
   };
 
@@ -324,10 +335,44 @@ function Appointments({ user }) {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+      return true;
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || "GreĹˇka pri generiranju obrasca.");
+      setError(err?.response?.data?.message || "Greška pri generiranju obrasca.");
+      return false;
     }
+  };
+
+  const downloadSavedObrazac = async (idObrazac, tip) => {
+    try {
+      const resp = await axios.get(
+        `/api/appointments/obrasci/${idObrazac}/download`,
+        { responseType: "blob" }
+      );
+      const blob = new Blob([resp.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `obrazac_${tip || "pdf"}_${idObrazac}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      setError(err?.response?.data?.message || "Greška pri preuzimanju obrasca.");
+    }
+  };
+
+  const handlePredaja = async (idPrijava) => {
+    if (!window.confirm("Potvrditi preuzimanje vozila i poslati obrazac predaje?")) return;
+    const ok = await downloadObrazac(idPrijava, "predaja");
+    if (!ok) return;
+    setMessage("Vozilo je preuzeto. Predaja je evidentirana i korisnik je obaviješten.");
+    const r = await axios.get("/api/appointments/prijave/dodijeljene");
+    setDodijeljene(r.data);
+    const predaje = await axios.get("/api/appointments/obrasci?tip=predaja");
+    setPredajaObrasci(predaje.data);
   };
 
   // Zamjensko vozilo: open modal and fetch available vehicles
@@ -369,7 +414,7 @@ function Appointments({ user }) {
       }
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'GreĹˇka pri rezervaciji zamjenskog vozila.');
+      setError(err?.response?.data?.message || 'Greška pri rezervaciji zamjenskog vozila.');
     }
   };
 
@@ -384,7 +429,7 @@ function Appointments({ user }) {
       setZamjenaModal(prev => ({ ...prev, available: r.data }));
     } catch (err) {
       console.error(err);
-      setError('GreĹˇka pri dohvatu zamjenskih vozila.');
+      setError('Greška pri dohvatu zamjenskih vozila.');
     }
   };
 
@@ -398,7 +443,7 @@ function Appointments({ user }) {
       setDodijeljene(r.data);
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'GreĹˇka pri promjeni vozila.');
+      setError(err?.response?.data?.message || 'Greška pri promjeni vozila.');
     }
   };
 
@@ -466,7 +511,7 @@ function Appointments({ user }) {
                         // refresh data
                         axios.get('/api/appointments/serviseri').then(r => setServiseri(r.data)).catch(e => console.error(e));
                         axios.get('/api/vehicles').then(r => setVehicles(r.data)).catch(e => console.error(e));
-                        alert('Seed zavrĹˇen. Provjeri dropdown.');
+                        alert('Seed završen. Provjeri dropdown.');
                       } catch (err) {
                         console.error(err);
                         alert('Seed nije uspio. Pogledaj konzolu.');
@@ -601,7 +646,7 @@ function Appointments({ user }) {
                         }
                       }
                     }} />
-                    <label className="form-check-label" htmlFor="zamjenaCheck">TraĹľim zamjensko vozilo</label>
+                    <label className="form-check-label" htmlFor="zamjenaCheck">Tražim zamjensko vozilo</label>
                   </div>
 
                   {zamjenaRequested && (
@@ -619,7 +664,7 @@ function Appointments({ user }) {
                           <label className="form-label">Odaberite zamjensko vozilo</label>
                           <select className="form-select" value={selectedZamjenaId} onChange={e => setSelectedZamjenaId(e.target.value)}>
                             <option value="">-- odaberite zamjensko vozilo --</option>
-                            {availableZamjene.map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
+                            {availableZamjene.map(z => <option key={z.id_zamjena ? z.idZamjena} value={z.id_zamjena ? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
                           </select>
                         </div>
                       </div>
@@ -631,7 +676,7 @@ function Appointments({ user }) {
                     <textarea className="form-control" value={napomena} onChange={e=>setNapomena(e.target.value)} rows={3}></textarea>
                   </div>
 
-                  <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? "Slanje..." : "PoĹˇalji prijavu"}</button>
+                  <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? "Slanje..." : "Pošalji prijavu"}</button>
                 </form>
               </div>
             </div>
@@ -640,7 +685,7 @@ function Appointments({ user }) {
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between">
                   <h5 className="card-title mb-0">Moje prijave</h5>
-                  <button className="btn btn-sm btn-outline-secondary" onClick={async ()=>{ const r = await axios.get(`/api/appointments/prijave/moje`); setMojePrijave(r.data); }}>OsvjeĹľi</button>
+                  <button className="btn btn-sm btn-outline-secondary" onClick={async ()=>{ const r = await axios.get(`/api/appointments/prijave/moje`); setMojePrijave(r.data); }}>Osvježi</button>
                 </div>
                 {mojePrijave.length === 0 && <div className="text-muted">Nema prijava</div>}
                 <ul className="list-group mt-2">
@@ -653,7 +698,7 @@ function Appointments({ user }) {
                         <div><strong>Serviser:</strong> {p.serviserIme}</div>
                         <div className="mt-2"><strong>Napomena vlasnika:</strong> {p.napomenaVlasnika || <span className="text-muted">-</span>}</div>
                         <div><strong>Napomena servisera:</strong> {p.napomeneServisera && p.napomeneServisera.length ? p.napomeneServisera[0].opis : <span className="text-muted">-</span>}</div>
-                        <div className="mt-1"><strong>Zamjensko vozilo:</strong> {p.rezervacijaZamjene ? `${p.rezervacijaZamjene.registracija} (${p.rezervacijaZamjene.datumOd} â€” ${p.rezervacijaZamjene.datumDo})` : <span className="text-muted">-</span>}</div>
+                        <div className="mt-1"><strong>Zamjensko vozilo:</strong> {p.rezervacijaZamjene ? `${p.rezervacijaZamjene.registracija} (${p.rezervacijaZamjene.datumOd} – ${p.rezervacijaZamjene.datumDo})` : <span className="text-muted">-</span>}</div>
                         {p.kvarovi && p.kvarovi.length > 0 && (
                           <div className="mt-2">
                             <strong>Kvarovi:</strong>
@@ -677,9 +722,9 @@ function Appointments({ user }) {
                                 setMojePrijave(r.data);
                               } catch (err) {
                                 console.error(err);
-                                alert('GreĹˇka pri brisanju prijave');
+                                alert('Greška pri brisanju prijave');
                               }
-                            }}>ObriĹˇi</button>
+                            }}>Obriši</button>
                             {!p.rezervacijaZamjene && (user.idOsoba === p.idVlasnik || user.uloga === 'administrator') && (
                               <button className="btn btn-sm btn-outline-secondary" onClick={()=>openZamjena(p)}>Rezerviraj zamjensko vozilo</button>
                             )}
@@ -708,7 +753,7 @@ function Appointments({ user }) {
                         <div><strong>Status:</strong> {renderStatus(p.status)}</div>
                         <div className="mt-2"><strong>Napomena vlasnika:</strong> {p.napomenaVlasnika || <span className="text-muted">-</span>}</div>
                         <div><strong>Napomena servisera:</strong> {p.napomeneServisera && p.napomeneServisera.length ? p.napomeneServisera[0].opis : <span className="text-muted">-</span>}</div>
-                        <div className="mt-1"><strong>Zamjensko vozilo:</strong> {p.rezervacijaZamjene ? `${p.rezervacijaZamjene.registracija} (${p.rezervacijaZamjene.datumOd} â€” ${p.rezervacijaZamjene.datumDo})` : <span className="text-muted">-</span>}</div>
+                        <div className="mt-1"><strong>Zamjensko vozilo:</strong> {p.rezervacijaZamjene ? `${p.rezervacijaZamjene.registracija} (${p.rezervacijaZamjene.datumOd} ? ${p.rezervacijaZamjene.datumDo})` : <span className="text-muted">-</span>}</div>
                         {p.kvarovi && p.kvarovi.length > 0 && (
                           <div className="mt-2">
                             <strong>Kvarovi:</strong>
@@ -725,8 +770,49 @@ function Appointments({ user }) {
                         <button className="btn btn-sm btn-outline-secondary" onClick={()=>openEditTermin(p)}>Odgodi termin</button>
                         <button className="btn btn-sm btn-outline-primary" onClick={()=>setStatusModal({ idPrijava: p.idPrijava, noviStatus: p.status })}>Promijeni status</button>
                         <button className="btn btn-sm btn-outline-secondary" onClick={()=>setNoteModal({ idPrijava: p.idPrijava, opis: '' })}>Dodaj napomenu</button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={()=>handleCompletePrijava(p.idPrijava)}>ZavrĹˇi servis</button>
+                        {!((p.status || "").toLowerCase().includes("obradi") || (p.status || "").toLowerCase().includes("zavr")) && (
+                          <button className="btn btn-sm btn-outline-success" onClick={()=>handlePredaja(p.idPrijava)}>Preuzmi vozilo</button>
+                        )}
+                        <button className="btn btn-sm btn-outline-danger" onClick={()=>handleCompletePrijava(p.idPrijava)}>Završi servis</button>
                       </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="card mb-4">
+              <div className="card-body">
+                <h5 className="card-title">PDF-ovi preuzimanja vozila</h5>
+                {predajaObrasci.length === 0 && <div className="text-muted">Nema obrazaca predaje.</div>}
+                <ul className="list-group mt-2">
+                  {predajaObrasci.map(o => (
+                    <li className="list-group-item d-flex justify-content-between align-items-start" key={o.idObrazac}>
+                      <div>
+                        <div><strong>Vozilo:</strong> {o.voziloInfo}</div>
+                        <div><strong>Vlasnik:</strong> {o.vlasnikInfo}</div>
+                        <div><strong>Datum:</strong> {o.datumGeneriranja ? new Date(o.datumGeneriranja).toLocaleString() : '-'}</div>
+                      </div>
+                      <button className="btn btn-sm btn-outline-primary" onClick={()=>downloadSavedObrazac(o.idObrazac, "predaja")}>Preuzmi PDF</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="card mb-4">
+              <div className="card-body">
+                <h5 className="card-title">PDF-ovi završetka servisa</h5>
+                {preuzimanjeObrasci.length === 0 && <div className="text-muted">Nema obrazaca završetka.</div>}
+                <ul className="list-group mt-2">
+                  {preuzimanjeObrasci.map(o => (
+                    <li className="list-group-item d-flex justify-content-between align-items-start" key={o.idObrazac}>
+                      <div>
+                        <div><strong>Vozilo:</strong> {o.voziloInfo}</div>
+                        <div><strong>Vlasnik:</strong> {o.vlasnikInfo}</div>
+                        <div><strong>Datum:</strong> {o.datumGeneriranja ? new Date(o.datumGeneriranja).toLocaleString() : '-'}</div>
+                      </div>
+                      <button className="btn btn-sm btn-outline-primary" onClick={()=>downloadSavedObrazac(o.idObrazac, "preuzimanje")}>Preuzmi PDF</button>
                     </li>
                   ))}
                 </ul>
@@ -749,7 +835,7 @@ function Appointments({ user }) {
                           // refresh data
                           axios.get('/api/appointments/serviseri').then(r => setServiseri(r.data)).catch(e => console.error(e));
                           axios.get('/api/vehicles').then(r => setVehicles(r.data)).catch(e => console.error(e));
-                          alert('Seed zavrĹˇen. Provjeri dropdown.');
+                          alert('Seed završen. Provjeri dropdown.');
                         } catch (err) {
                           console.error(err);
                           alert('Seed nije uspio. Pogledaj konzolu.');
@@ -877,7 +963,7 @@ function Appointments({ user }) {
                       <textarea className="form-control" value={napomena} onChange={e=>setNapomena(e.target.value)} rows={3}></textarea>
                     </div>
 
-                    <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? "Slanje..." : "PoĹˇalji prijavu"}</button>
+                    <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? "Slanje..." : "Pošalji prijavu"}</button>
                   </form>
                 </div>
               </div>
@@ -924,9 +1010,9 @@ function Appointments({ user }) {
                                   }
                                 } catch (err) {
                                   console.error(err);
-                                  alert('GreĹˇka pri brisanju prijave');
+                                  alert('Greška pri brisanju prijave');
                                 }
-                              }}>ObriĹˇi</button>
+                              }}>Obriši</button>
                               {!p.rezervacijaZamjene && (user.idOsoba === p.idVlasnik || user.uloga === 'administrator') && (
                                 <button className="btn btn-sm btn-outline-secondary" onClick={()=>openZamjena(p)}>Rezerviraj zamjensko vozilo</button>
                               )}
@@ -1095,7 +1181,7 @@ function Appointments({ user }) {
                   <label className="form-label">Dostupna vozila</label>
                   <select className="form-select" value={zamjenaModal.selectedZamjena || ''} onChange={e => setZamjenaModal({...zamjenaModal, selectedZamjena: e.target.value})}>
                     <option value="">-- odaberite zamjensko vozilo --</option>
-                    {(zamjenaModal.available || []).map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
+                    {(zamjenaModal.available || []).map(z => <option key={z.id_zamjena ? z.idZamjena} value={z.id_zamjena ? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
                   </select>
                 </div>
               </div>
@@ -1123,7 +1209,7 @@ function Appointments({ user }) {
                   <select className="form-select" value={statusModal.noviStatus} onChange={e=>setStatusModal({...statusModal, noviStatus: e.target.value})}>
                     <option value="zaprimljeno">zaprimljeno</option>
                     <option value="u obradi">u obradi</option>
-                    <option value="odgoÄ‘eno">odgoÄ‘eno</option>
+                    <option value="odgođeno">odgođeno</option>
                   </select>
                 </div>
               </div>
@@ -1165,9 +1251,3 @@ function Appointments({ user }) {
 }
 
 export default Appointments;
-
-
-
-
-
-

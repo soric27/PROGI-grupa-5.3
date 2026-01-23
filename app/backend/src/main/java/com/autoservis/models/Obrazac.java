@@ -20,15 +20,21 @@ public class Obrazac {
   @Column(name = "putanja_pdf")
   private String putanjaPdf;
 
+  @Lob
+  @Basic(fetch = FetchType.LAZY)
+  @Column(name = "pdf_data")
+  private byte[] pdfData;
+
   @Column(name = "datum_generiranja")
   private LocalDateTime datumGeneriranja;
 
   protected Obrazac() {}
 
-  public Obrazac(PrijavaServisa prijava, String tip, String putanjaPdf) {
+  public Obrazac(PrijavaServisa prijava, String tip, String putanjaPdf, byte[] pdfData) {
     this.prijava = prijava;
     this.tip = tip;
     this.putanjaPdf = putanjaPdf;
+    this.pdfData = pdfData;
     this.datumGeneriranja = LocalDateTime.now();
   }
 
@@ -36,5 +42,6 @@ public class Obrazac {
   public PrijavaServisa getPrijava() { return prijava; }
   public String getTip() { return tip; }
   public String getPutanjaPdf() { return putanjaPdf; }
+  public byte[] getPdfData() { return pdfData; }
   public LocalDateTime getDatumGeneriranja() { return datumGeneriranja; }
 }

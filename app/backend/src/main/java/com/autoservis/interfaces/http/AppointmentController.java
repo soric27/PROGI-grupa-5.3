@@ -20,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
 import com.autoservis.interfaces.dto.NapomenaCreateDto;
+import com.autoservis.interfaces.dto.ObrazacDto;
 import com.autoservis.interfaces.dto.PrijavaServisaCreateDto;
 import com.autoservis.interfaces.dto.ServiserDto;
 import com.autoservis.interfaces.dto.StatusUpdateDto;
@@ -235,11 +236,6 @@ public class AppointmentController {
 
         java.io.File pdf = prijavaService.markPredaja(idPrijava, idOsoba);
         byte[] bytes = java.nio.file.Files.readAllBytes(pdf.toPath());
-        try {
-            java.nio.file.Files.deleteIfExists(pdf.toPath());
-        } catch (java.io.IOException ex) {
-            // ignore delete failures
-        }
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=obrazac_predaja.pdf")
             .contentType(MediaType.APPLICATION_PDF)
@@ -260,13 +256,53 @@ public class AppointmentController {
 
         java.io.File pdf = prijavaService.markPreuzimanje(idPrijava, idOsoba);
         byte[] bytes = java.nio.file.Files.readAllBytes(pdf.toPath());
-        try {
-            java.nio.file.Files.deleteIfExists(pdf.toPath());
-        } catch (java.io.IOException ex) {
-            // ignore delete failures
-        }
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=obrazac_preuzimanje.pdf")
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(bytes);
+    }
+
+    // Lista obrazaca (predaja/preuzimanje) za servisera ili admina
+    @GetMapping("/obrasci")
+    @PreAuthorize("hasAnyRole('SERVISER', 'ADMINISTRATOR')")
+    public ResponseEntity<?> getObrasci(@RequestParam String tip, @AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Niste prijavljeni."));
+        }
+        Long idOsoba = jwt.getClaim("id_osoba");
+        if (idOsoba == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Nevažeći token."));
+        }
+        boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+        java.util.List<ObrazacDto> list = prijavaService.getObrasciForServiser(idOsoba, tip, isAdmin);
+        return ResponseEntity.ok(list);
+    }
+
+    // Download obrazac PDF (predaja/preuzimanje)
+    @GetMapping("/obrasci/{id}/download")
+    @PreAuthorize("hasAnyRole('SERVISER', 'ADMINISTRATOR')")
+    public ResponseEntity<?> downloadObrazac(@PathVariable("id") Long idObrazac, @AuthenticationPrincipal Jwt jwt) throws java.io.IOException {
+        if (jwt == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Niste prijavljeni."));
+        }
+        Long idOsoba = jwt.getClaim("id_osoba");
+        if (idOsoba == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Nevažeći token."));
+        }
+        boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
+        var obrazac = prijavaService.getObrazacForDownload(idObrazac, idOsoba, isAdmin);
+
+        byte[] bytes = obrazac.getPdfData();
+        if (bytes == null || bytes.length == 0) {
+            if (obrazac.getPutanjaPdf() == null) {
+                return ResponseEntity.status(404).body(Map.of("message", "PDF nije pronađen."));
+            }
+            bytes = java.nio.file.Files.readAllBytes(java.nio.file.Path.of(obrazac.getPutanjaPdf()));
+        }
+
+        String filename = String.format("obrazac_%s_%d.pdf", obrazac.getTip(), obrazac.getIdObrazac());
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
             .contentType(MediaType.APPLICATION_PDF)
             .body(bytes);
     }

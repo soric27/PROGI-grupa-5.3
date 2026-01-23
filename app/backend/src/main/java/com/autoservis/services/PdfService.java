@@ -125,7 +125,8 @@ public class PdfService {
       logger.info("Generated PDF obrazac {} for prijava {} at {}", tip, prijava.getIdPrijava(), out.toAbsolutePath());
     }
 
-    Obrazac obrazac = new Obrazac(prijava, tip, out.toAbsolutePath().toString());
+    byte[] pdfBytes = Files.readAllBytes(out);
+    Obrazac obrazac = new Obrazac(prijava, tip, out.toAbsolutePath().toString(), pdfBytes);
     obrazacRepository.save(obrazac);
     logger.debug("Saved Obrazac id {} for prijava id {}", obrazac.getIdObrazac(), prijava.getIdPrijava());
 

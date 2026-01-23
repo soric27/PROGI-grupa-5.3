@@ -133,6 +133,7 @@ CREATE TABLE obrazac (
     id_prijava INT REFERENCES prijava_servisa(id_prijava) ON DELETE CASCADE,
     tip VARCHAR(20) CHECK (tip IN ('predaja', 'preuzimanje')),
     putanja_pdf TEXT NOT NULL,
+    pdf_data BYTEA,
     datum_generiranja TIMESTAMP NOT NULL
 );
 

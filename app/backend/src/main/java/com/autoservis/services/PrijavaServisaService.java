@@ -38,8 +38,9 @@ public class PrijavaServisaService {
     private final KvarRepository kvarRepository;
     private final PdfService pdfService;
     private final EmailService emailService;
+    private final com.autoservis.repositories.ObrazacRepository obrazacRepository;
 
-    public PrijavaServisaService(PrijavaServisaRepository prijave, VoziloRepository vozila, ServiserRepository serviseri, TerminRepository termini, NapomenaServiseraRepository n, OsobaRepository osobeRepo, ZamjenaService zamjenaService, KvarRepository kvarRepository, PdfService pdfService, EmailService emailService) {
+    public PrijavaServisaService(PrijavaServisaRepository prijave, VoziloRepository vozila, ServiserRepository serviseri, TerminRepository termini, NapomenaServiseraRepository n, OsobaRepository osobeRepo, ZamjenaService zamjenaService, KvarRepository kvarRepository, PdfService pdfService, EmailService emailService, com.autoservis.repositories.ObrazacRepository obrazacRepository) {
         this.prijave = prijave;
         this.vozila = vozila;
         this.serviseri = serviseri;
@@ -50,6 +51,7 @@ public class PrijavaServisaService {
         this.kvarRepository = kvarRepository;
         this.pdfService = pdfService;
         this.emailService = emailService;
+        this.obrazacRepository = obrazacRepository;
     }
 
     @Transactional
@@ -58,7 +60,7 @@ public class PrijavaServisaService {
                 .orElseThrow(() -> new IllegalArgumentException("Prijava ne postoji."));
 
         // Only administrators should call this method (controller enforces it)
-        // Dohvati vlasnika vozila i aĹľuriraj polja ako su proslijeÄ‘ena
+        // Dohvati vlasnika vozila i ažuriraj polja ako su proslijeđena
         com.autoservis.models.Osoba vlasnik = prijava.getVozilo().getOsoba();
         if (dto.ime() != null && !dto.ime().isBlank()) vlasnik.setIme(dto.ime());
         if (dto.prezime() != null && !dto.prezime().isBlank()) vlasnik.setPrezime(dto.prezime());
@@ -80,7 +82,7 @@ public class PrijavaServisaService {
                     return !status.contains("zavr");
                 });
         if (hasActive) {
-            throw new IllegalStateException("Vozilo veÄ‡ ima aktivnu prijavu.");
+            throw new IllegalStateException("Vozilo već ima aktivnu prijavu.");
         }
 
         // SIGURNOSNA PROVJERA: Osiguraj da korisnik prijavljuje SVOJE vozilo
@@ -99,10 +101,10 @@ public class PrijavaServisaService {
             throw new IllegalArgumentException("Odabrani termin ne pripada odabranom serviseru.");
         }
 
-        // PokuĹˇaj atomskog markiranja termina kao zauzetog
+        // Pokušaj atomskog markiranja termina kao zauzetog
         int updated = termini.markAsTaken(termin.getIdTermin());
         if (updated == 0) {
-            throw new IllegalStateException("Odabrani termin je u meÄ‘uvremenu zauzet.");
+            throw new IllegalStateException("Odabrani termin je u međuvremenu zauzet.");
         }
 
         // Kreiraj i spremi novu prijavu
@@ -110,11 +112,7 @@ public class PrijavaServisaService {
                 vozilo, serviser, termin, dto.napomenaVlasnika()
         );
         
-        // Dodaj odabrane kvarove ako su proslijeÄ‘eni
-        if (dto.idKvarovi() == null || dto.idKvarovi().isEmpty()) {
-            throw new IllegalArgumentException("Potrebno je odabrati barem jedan kvar.");
-        }
-
+        // Dodaj odabrane kvarove ako su proslijeđeni
         if (dto.idKvarovi() != null && !dto.idKvarovi().isEmpty()) {
             java.util.List<Kvar> kvarovi = kvarRepository.findAllById(dto.idKvarovi());
             novaPrijava.setKvarovi(kvarovi);
@@ -133,7 +131,7 @@ public class PrijavaServisaService {
         return com.autoservis.shared.PrijavaServisaMapper.toDetailDto(novaPrijava, rez);
     }
 
-    // Administrator: kreiraj prijavu za bilo kojeg korisnika (provjera vlasniĹˇtva vozila)
+    // Administrator: kreiraj prijavu za bilo kojeg korisnika (provjera vlasništva vozila)
     @Transactional
     public com.autoservis.interfaces.dto.PrijavaDetalleDto createPrijavaForUser(PrijavaServisaCreateDto dto, Long idVlasnika) {
         Vozilo vozilo = vozila.findById(dto.idVozilo())
@@ -146,7 +144,7 @@ public class PrijavaServisaService {
                     return !status.contains("zavr");
                 });
         if (hasActive) {
-            throw new IllegalStateException("Vozilo veÄ‡ ima aktivnu prijavu.");
+            throw new IllegalStateException("Vozilo već ima aktivnu prijavu.");
         }
 
         // Provjeri da vozilo pripada odabranoj osobi
@@ -166,18 +164,14 @@ public class PrijavaServisaService {
 
         int updated = termini.markAsTaken(termin.getIdTermin());
         if (updated == 0) {
-            throw new IllegalStateException("Odabrani termin je u meÄ‘uvremenu zauzet.");
+            throw new IllegalStateException("Odabrani termin je u međuvremenu zauzet.");
         }
 
         PrijavaServisa novaPrijava = new PrijavaServisa(
                 vozilo, serviser, termin, dto.napomenaVlasnika()
         );
         
-        // Dodaj odabrane kvarove ako su proslijeÄ‘eni
-        if (dto.idKvarovi() == null || dto.idKvarovi().isEmpty()) {
-            throw new IllegalArgumentException("Potrebno je odabrati barem jedan kvar.");
-        }
-
+        // Dodaj odabrane kvarove ako su proslijeđeni
         if (dto.idKvarovi() != null && !dto.idKvarovi().isEmpty()) {
             java.util.List<Kvar> kvarovi = kvarRepository.findAllById(dto.idKvarovi());
             novaPrijava.setKvarovi(kvarovi);
@@ -195,7 +189,7 @@ public class PrijavaServisaService {
         return com.autoservis.shared.PrijavaServisaMapper.toDetailDto(novaPrijava, rez);
     }
 
-    // Administrator: obriĹˇi prijavu i oslobodi termin
+    // Administrator: obriši prijavu i oslobodi termin
     @Transactional
     public void deletePrijavaAsAdmin(Long idPrijave) {
         PrijavaServisa prijava = prijave.findById(idPrijave)
@@ -286,7 +280,7 @@ public class PrijavaServisaService {
                 .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
         
         if (!prijava.getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
-            throw new AccessDeniedException("MoĹľete mijenjati status samo svojih prijava.");
+            throw new AccessDeniedException("Možete mijenjati status samo svojih prijava.");
         }
 
         String normalized = noviStatus == null ? "" : noviStatus.trim().toLowerCase();
@@ -321,7 +315,6 @@ public class PrijavaServisaService {
                 String subj = "Servis zavrsen - prijava " + prijava.getIdPrijava();
                 String body = "Vas servis je zavrsen. U privitku je obrazac s podacima o servisu.";
                 emailService.sendEmailWithAttachment(to, subj, body, pdf);
-                deleteFileQuietly(pdf);
             } catch (Exception ex) {
                 throw new IllegalStateException("Slanje emaila nije uspjelo.", ex);
             }
@@ -345,6 +338,53 @@ public class PrijavaServisaService {
         prijava.setDatumPreuzimanja(now);
         prijava.setStatus("završeno");
         prijave.save(prijava);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<com.autoservis.interfaces.dto.ObrazacDto> getObrasciForServiser(Long idOsoba, String tip, boolean isAdmin) {
+        java.util.List<com.autoservis.models.Obrazac> obrasci;
+        if (isAdmin) {
+            obrasci = obrazacRepository.findByTipOrderByDatumGeneriranjaDesc(tip);
+        } else {
+            com.autoservis.models.Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsoba)
+                .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
+            obrasci = obrazacRepository.findByPrijava_Serviser_IdServiserAndTipOrderByDatumGeneriranjaDesc(serviser.getIdServiser(), tip);
+        }
+
+        return obrasci.stream().map(o -> {
+            var p = o.getPrijava();
+            var vozilo = p.getVozilo();
+            var vlasnik = vozilo.getOsoba();
+            String voziloInfo = String.format("%s %s (%s)",
+                vozilo.getModel().getMarka().getNaziv(),
+                vozilo.getModel().getNaziv(),
+                vozilo.getRegistracija());
+            String vlasnikInfo = String.format("%s %s, %s",
+                vlasnik.getIme(), vlasnik.getPrezime(), vlasnik.getEmail());
+            return new com.autoservis.interfaces.dto.ObrazacDto(
+                o.getIdObrazac(),
+                p.getIdPrijava(),
+                o.getTip(),
+                o.getDatumGeneriranja(),
+                voziloInfo,
+                vlasnikInfo
+            );
+        }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public com.autoservis.models.Obrazac getObrazacForDownload(Long idObrazac, Long idOsoba, boolean isAdmin) {
+        com.autoservis.models.Obrazac obrazac = obrazacRepository.findById(idObrazac)
+            .orElseThrow(() -> new IllegalArgumentException("Obrazac ne postoji."));
+
+        if (isAdmin) return obrazac;
+
+        com.autoservis.models.Serviser serviser = serviseri.findByOsoba_IdOsoba(idOsoba)
+            .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
+        if (!obrazac.getPrijava().getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
+            throw new AccessDeniedException("Nemate ovlasti za ovaj obrazac.");
+        }
+        return obrazac;
     }
 
     @Transactional
@@ -445,7 +485,7 @@ public class PrijavaServisaService {
                 .orElseThrow(() -> new AccessDeniedException("Nemate ovlasti za ovu akciju."));
         
         if (!prijava.getServiser().getIdServiser().equals(serviser.getIdServiser()) && !serviser.isJeLiVoditelj()) {
-            throw new AccessDeniedException("MoĹľete dodavati napomene samo na svoje prijave.");
+            throw new AccessDeniedException("Možete dodavati napomene samo na svoje prijave.");
         }
         
         NapomenaServisera novaNapomena = new NapomenaServisera(prijava, dto.opis());
@@ -470,6 +510,5 @@ public class PrijavaServisaService {
         prijave.save(prijava);
     }
 }
-
 
 
