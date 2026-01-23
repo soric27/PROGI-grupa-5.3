@@ -27,3 +27,4 @@ app/frontend/node_modules/
 # Environment
 .env
 data/pdfs/
+app/backend/data/pdfs/
