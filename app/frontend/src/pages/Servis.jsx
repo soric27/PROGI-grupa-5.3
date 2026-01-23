@@ -17,6 +17,14 @@ function Servis({ user }) {
   const [msgType, setMsgType] = useState('');
   const [saving, setSaving] = useState(false);
 
+  if (!user || user.uloga !== 'administrator') {
+    return (
+      <div className="container mt-4">
+        <h4>Nemate pristup ovoj stranici.</h4>
+      </div>
+    );
+  }
+
   const containerStyle = {
     width: '100%',
     height: '400px'
@@ -183,3 +191,4 @@ function Servis({ user }) {
 }
 
 export default Servis;
+

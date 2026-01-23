@@ -145,7 +145,10 @@ public class ZamjenaController {
       if (idOsoba == null) return ResponseEntity.status(401).body("Nevažeći token.");
       boolean isAdmin = "administrator".equalsIgnoreCase(claimAsString(jwt, "uloga"));
       RezervacijaZamjene rez = zamjenaService.reserveWithAuth(dto.idPrijava, dto.idZamjena, dto.datumOd, dto.datumDo, idOsoba, isAdmin);
-      return ResponseEntity.ok(rez);
+      return ResponseEntity.ok(java.util.Map.of(
+          "idRezervacija", rez.getIdRezervacija(),
+          "message", "Zamjensko vozilo rezervirano."
+      ));
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());
     } catch (IllegalStateException e) {

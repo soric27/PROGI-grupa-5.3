@@ -102,6 +102,7 @@ function Zamjene({ user }) {
             <tr>
               <th>Registracija</th>
               <th>Model</th>
+              <th>Marka</th>
               <th>Dostupno</th>
               <th></th>
             </tr>
@@ -111,6 +112,7 @@ function Zamjene({ user }) {
               <tr key={z.id_zamjena}>
                 <td>{z.registracija}</td>
                 <td>{z.model_naziv || ''}</td>
+                <td>{z.marka_naziv || z.markaNaziv || ''}</td>
                 <td>{z.dostupno ? 'Da' : 'Ne'}</td>
                 <td>
                   <button className="btn btn-sm btn-danger" onClick={async ()=>{
@@ -133,3 +135,5 @@ function Zamjene({ user }) {
 }
 
 export default Zamjene;
+
+

@@ -327,16 +327,20 @@ function Appointments({ user }) {
 
   // Zamjensko vozilo: open modal and fetch available vehicles
   const openZamjena = async (p) => {
-    const today = new Date().toISOString().slice(0,10);
-    const next = new Date(); next.setDate(next.getDate() + 7);
-    const nextStr = next.toISOString().slice(0,10);
-    setZamjenaModal({ idPrijava: p.idPrijava, datumOd: today, datumDo: nextStr, available: [], selectedZamjena: null });
+    const todayObj = new Date();
+    const terminObj = p?.datumTermina ? new Date(p.datumTermina) : null;
+    const minDateObj = (terminObj && terminObj > todayObj) ? terminObj : todayObj;
+    const minDate = minDateObj.toISOString().slice(0, 10);
+    const next = new Date(minDateObj);
+    next.setDate(next.getDate() + 7);
+    const nextStr = next.toISOString().slice(0, 10);
+    setZamjenaModal({ idPrijava: p.idPrijava, datumOd: minDate, datumDo: nextStr, available: [], selectedZamjena: null, minDate });
     try {
-      const r = await axios.get(`/api/zamjene?from=${today}&to=${nextStr}`);
+      const r = await axios.get(`/api/zamjene?from=${minDate}&to=${nextStr}`);
       setZamjenaModal(prev => ({ ...prev, available: r.data }));
     } catch (err) {
       console.error(err);
-      setError(err?.response?.data?.message || 'GreÅ¡ka pri dohvatu zamjenskih vozila.');
+      setError(err?.response?.data?.message || 'Greška pri dohvatu zamjenskih vozila.');
     }
   };
 
@@ -412,6 +416,12 @@ function Appointments({ user }) {
     return `${year}-${month}-${day}`;
   };
 
+  const formatZamjenaLabel = (z) => {
+    const marka = z?.marka_naziv || z?.markaNaziv || z?.model?.marka?.naziv || "";
+    const model = z?.model_naziv || z?.modelNaziv || z?.model?.naziv || "";
+    const info = [marka, model].filter(Boolean).join(" ");
+    return `${z?.registracija || ""}${info ? ` (${info})` : ""}`;
+  };
   const timeSlotsForDate = (date) => (
     termini
       .filter(t => t && t.datumVrijeme && t.datumVrijeme.slice(0, 10) === date)
@@ -601,7 +611,7 @@ function Appointments({ user }) {
                           <label className="form-label">Odaberite zamjensko vozilo</label>
                           <select className="form-select" value={selectedZamjenaId} onChange={e => setSelectedZamjenaId(e.target.value)}>
                             <option value="">-- odaberite zamjensko vozilo --</option>
-                            {availableZamjene.map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{z.registracija} ({z.model?.naziv || ''})</option>)}
+                            {availableZamjene.map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
                           </select>
                         </div>
                       </div>
@@ -1067,17 +1077,17 @@ function Appointments({ user }) {
                 {error && <div className="alert alert-danger">{error}</div>}
                 <div className="mb-3">
                   <label className="form-label">Datum od</label>
-                  <input type="date" className="form-control" value={zamjenaModal.datumOd} onChange={e => setZamjenaModal({...zamjenaModal, datumOd: e.target.value})} />
+                  <input type="date" className="form-control" value={zamjenaModal.datumOd} min={zamjenaModal.minDate || ""} onChange={e => setZamjenaModal({...zamjenaModal, datumOd: e.target.value})} />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Datum do</label>
-                  <input type="date" className="form-control" value={zamjenaModal.datumDo} onChange={e => setZamjenaModal({...zamjenaModal, datumDo: e.target.value})} />
+                  <input type="date" className="form-control" value={zamjenaModal.datumDo} min={(zamjenaModal.datumOd || zamjenaModal.minDate) || ""} onChange={e => setZamjenaModal({...zamjenaModal, datumDo: e.target.value})} />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Dostupna vozila</label>
                   <select className="form-select" value={zamjenaModal.selectedZamjena || ''} onChange={e => setZamjenaModal({...zamjenaModal, selectedZamjena: e.target.value})}>
                     <option value="">-- odaberite zamjensko vozilo --</option>
-                    {(zamjenaModal.available || []).map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{z.registracija} ({z.model?.naziv || ''})</option>)}
+                    {(zamjenaModal.available || []).map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
                   </select>
                 </div>
               </div>
@@ -1147,4 +1157,8 @@ function Appointments({ user }) {
 }
 
 export default Appointments;
+
+
+
+
 
