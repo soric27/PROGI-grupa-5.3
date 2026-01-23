@@ -101,6 +101,12 @@ function AppRoutes() {
     }
   }, [location.search, location.hash, location.pathname, navigate]);
 
+  useEffect(() => {
+    if (user && (user.uloga === "serviser" || user.uloga === "administrator") && location.pathname === "/") {
+      navigate("/statistika", { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
+
   return (
     <>
       <Navbar user={user} />
@@ -122,9 +128,16 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useEffect(() => {
+    if (user && (user.uloga === "serviser" || user.uloga === "administrator") && location.pathname === "/") {
+      navigate("/statistika", { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
+
   return (
     <Router>
       <AppRoutes />
     </Router>
   );
 }
+

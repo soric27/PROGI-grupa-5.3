@@ -422,6 +422,9 @@ function Appointments({ user }) {
     const info = [marka, model].filter(Boolean).join(" ");
     return `${z?.registracija || ""}${info ? ` (${info})` : ""}`;
   };
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const selectedDateStr = selectedDatum ? toDateString(selectedDatum) : "";
+  const minZamjenaDate = selectedDateStr && selectedDateStr > todayStr ? selectedDateStr : todayStr;
   const timeSlotsForDate = (date) => (
     termini
       .filter(t => t && t.datumVrijeme && t.datumVrijeme.slice(0, 10) === date)
@@ -601,11 +604,11 @@ function Appointments({ user }) {
                       <div className="row g-2">
                         <div className="col-md-4">
                           <label className="form-label">Datum od</label>
-                          <input type="date" className="form-control" value={zamjenaOd} onChange={e => setZamjenaOd(e.target.value)} />
+                          <input type="date" className="form-control" value={zamjenaOd} min={minZamjenaDate} onChange={e => setZamjenaOd(e.target.value)} />
                         </div>
                         <div className="col-md-4">
                           <label className="form-label">Datum do</label>
-                          <input type="date" className="form-control" value={zamjenaDo} onChange={e => setZamjenaDo(e.target.value)} />
+                          <input type="date" className="form-control" value={zamjenaDo} min={zamjenaOd || minZamjenaDate} onChange={e => setZamjenaDo(e.target.value)} />
                         </div>
                         <div className="col-md-4">
                           <label className="form-label">Odaberite zamjensko vozilo</label>
@@ -1157,6 +1160,7 @@ function Appointments({ user }) {
 }
 
 export default Appointments;
+
 
 
 
