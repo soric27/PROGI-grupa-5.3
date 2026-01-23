@@ -128,16 +128,10 @@ function AppRoutes() {
 }
 
 export default function App() {
-  useEffect(() => {
-    if (user && (user.uloga === "serviser" || user.uloga === "administrator") && location.pathname === "/") {
-      navigate("/statistika", { replace: true });
-    }
-  }, [user, location.pathname, navigate]);
-
   return (
     <Router>
       <AppRoutes />
     </Router>
   );
-}
+}
 
