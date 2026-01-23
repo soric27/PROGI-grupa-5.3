@@ -136,6 +136,11 @@ function Appointments({ user }) {
     if (!selectedTermin) { setError("Molimo odaberite termin."); return; }
     if (!selectedKvarovi || selectedKvarovi.length === 0) { setError("Potrebno je odabrati barem jedan kvar."); return; }
     if (selectedDatum && !availableDates.includes(toDateString(selectedDatum))) { setError("Za odabrani dan nema dostupnih termina."); return; }
+    if (zamjenaRequested) {
+      if (!zamjenaOd || !zamjenaDo) { setError("Molimo odaberite raspon datuma za zamjensko vozilo."); return; }
+      if (zamjenaOd < minZamjenaDate || zamjenaDo < minZamjenaDate) { setError("Datumi za zamjensko vozilo ne mogu biti prije današnjeg datuma ili termina."); return; }
+      if (zamjenaDo < zamjenaOd) { setError("Datum 'do' ne može biti prije datuma 'od'."); return; }
+    }
     setLoading(true); setError(""); setMessage("");
 
     try {
