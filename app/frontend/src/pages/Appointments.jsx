@@ -664,7 +664,7 @@ function Appointments({ user }) {
                           <label className="form-label">Odaberite zamjensko vozilo</label>
                           <select className="form-select" value={selectedZamjenaId} onChange={e => setSelectedZamjenaId(e.target.value)}>
                             <option value="">-- odaberite zamjensko vozilo --</option>
-                            {availableZamjene.map(z => <option key={z.id_zamjena ? z.idZamjena} value={z.id_zamjena ? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
+                            {availableZamjene.map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
                           </select>
                         </div>
                       </div>
