@@ -17,13 +17,6 @@ function Servis({ user }) {
   const [msgType, setMsgType] = useState('');
   const [saving, setSaving] = useState(false);
 
-  if (!user || user.uloga !== 'administrator') {
-    return (
-      <div className="container mt-4">
-        <h4>Nemate pristup ovoj stranici.</h4>
-      </div>
-    );
-  }
 
   const containerStyle = {
     width: '100%',
@@ -85,6 +78,14 @@ function Servis({ user }) {
   };
 
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+
+  if (!user || user.uloga !== 'administrator') {
+    return (
+      <div className="container mt-4">
+        <h4>Nemate pristup ovoj stranici.</h4>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
@@ -191,4 +192,5 @@ function Servis({ user }) {
 }
 
 export default Servis;
+
 
