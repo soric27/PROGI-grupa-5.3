@@ -73,9 +73,15 @@ function Osobe({ user }) {
     if (!window.confirm(`Promijeniti vlastitu ulogu u "${uloga}"?`)) return;
     setLoading(true); setError(""); setMessage("");
     try {
-      await axios.patch(`/api/users/${user.idOsoba}`, { uloga });
-      setMessage(`Uloga je promijenjena u "${uloga}". Ponovno se prijavite kako bi promjena stupila na snagu.`);
+      const r = await axios.post('/api/auth/select-role', { uloga });
+      const token = r?.data?.token;
+      if (token) {
+        sessionStorage.setItem("auth_token", token);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
+      setMessage(`Uloga je promijenjena u "${uloga}".`);
       await fetchUsers();
+      window.location.assign("/");
     } catch (e) {
       console.error(e);
       setError(e?.response?.data || 'Greška pri ažuriranju uloge.');
