@@ -1181,7 +1181,7 @@ function Appointments({ user }) {
                   <label className="form-label">Dostupna vozila</label>
                   <select className="form-select" value={zamjenaModal.selectedZamjena || ''} onChange={e => setZamjenaModal({...zamjenaModal, selectedZamjena: e.target.value})}>
                     <option value="">-- odaberite zamjensko vozilo --</option>
-                    {(zamjenaModal.available || []).map(z => <option key={z.id_zamjena ? z.idZamjena} value={z.id_zamjena ? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
+                    {(zamjenaModal.available || []).map(z => <option key={z.id_zamjena ?? z.idZamjena} value={z.id_zamjena ?? z.idZamjena}>{formatZamjenaLabel(z)}</option>)}
                   </select>
                 </div>
               </div>
