@@ -244,6 +244,10 @@ public class PrijavaServisaService {
     public List<PrijavaDetalleDto> getPrijaveForKorisnik(Long idOsoba) {
         return prijave.findAll().stream()
                 .filter(p -> p.getVozilo().getOsoba().getIdOsoba().equals(idOsoba))
+                .filter(p -> {
+                    String status = p.getStatus() == null ? "" : p.getStatus().toLowerCase();
+                    return !status.contains("zavr");
+                })
                 .map(p -> {
                     var rezList = zamjenaService.getReservationsForPrijava(p.getIdPrijava());
                     var latest = rezList.isEmpty() ? null : rezList.get(rezList.size()-1);
@@ -258,6 +262,10 @@ public class PrijavaServisaService {
         return serviseri.findByOsoba_IdOsoba(idOsoba)
                 .map(serviser -> prijave.findAll().stream()
                         .filter(p -> p.getServiser().getIdServiser().equals(serviser.getIdServiser()))
+                        .filter(p -> {
+                            String status = p.getStatus() == null ? "" : p.getStatus().toLowerCase();
+                            return !status.contains("zavr");
+                        })
                         .map(p -> {
                             var rezList = zamjenaService.getReservationsForPrijava(p.getIdPrijava());
                             var latest = rezList.isEmpty() ? null : rezList.get(rezList.size()-1);
@@ -330,7 +338,13 @@ public class PrijavaServisaService {
             termini.save(termin);
         }
 
-        prijave.delete(prijava);
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if (prijava.getDatumPredaje() == null) {
+            prijava.setDatumPredaje(now);
+        }
+        prijava.setDatumPreuzimanja(now);
+        prijava.setStatus("zavrâ€Ăłeno");
+        prijave.save(prijava);
     }
 
     @Transactional

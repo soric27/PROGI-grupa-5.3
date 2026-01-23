@@ -148,7 +148,7 @@ public class AppointmentController {
 
         boolean isAdmin = "administrator".equalsIgnoreCase((String) jwt.getClaim("uloga"));
         prijavaService.completePrijava(idPrijava, idOsoba, isAdmin);
-        return ResponseEntity.ok(Map.of("message", "Prijava je zavrsena i obrisana."));
+        return ResponseEntity.ok(Map.of("message", "Prijava je zavrsena."));
     }
 
     // Uredi podatke vlasnika prijave - samo za ADMINISTRATORA

@@ -20,7 +20,7 @@ function Kontakt() {
       <Mapa />
       <p></p>
       <h5>Radno vrijeme</h5>
-      <p>Pon - Pet: 8:00 - 17:00</p>
+      <p>{info.workingHours || 'Pon - Pet: 8:00 - 17:00'}</p>
       <p>Tel: {info.contactPhone}</p>
       <p>Email: {info.contactEmail}</p>
 
