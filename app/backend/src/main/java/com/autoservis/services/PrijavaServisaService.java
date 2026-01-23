@@ -343,7 +343,7 @@ public class PrijavaServisaService {
             prijava.setDatumPredaje(now);
         }
         prijava.setDatumPreuzimanja(now);
-        prijava.setStatus("zavrâ€Ăłeno");
+        prijava.setStatus("zavr�eno");
         prijave.save(prijava);
     }
 
@@ -383,7 +383,7 @@ public class PrijavaServisaService {
         if (prijava.getDatumPreuzimanja() == null) {
             prijava.setDatumPreuzimanja(java.time.LocalDateTime.now());
         }
-        prijava.setStatus("zavr‘óeno");
+        prijava.setStatus("zavr�eno");
         prijave.save(prijava);
 
         java.io.File pdf = pdfService.generateObrazacPdf(prijava, "preuzimanje");
@@ -470,3 +470,6 @@ public class PrijavaServisaService {
         prijave.save(prijava);
     }
 }
+
+
+
