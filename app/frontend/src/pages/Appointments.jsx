@@ -477,7 +477,7 @@ function Appointments({ user }) {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Odaberite servisa</label>
+                    <label className="form-label">Odaberite servisera</label>
                     <select className="form-select" value={selectedServiser} onChange={e=>setSelectedServiser(e.target.value)} required>
                       <option value="">-- odaberite --</option>
                       {serviseri.map(s => <option key={s.idServiser} value={s.idServiser}>{s.imePrezime}</option>)}
@@ -759,7 +759,7 @@ function Appointments({ user }) {
                     </div>
 
                     <div className="mb-3">
-                      <label className="form-label">Odaberite servisa</label>
+                        <label className="form-label">Odaberite servisera</label>
                       <select className="form-select" value={selectedServiser} onChange={e=>setSelectedServiser(e.target.value)} required>
                         <option value="">-- odaberite --</option>
                         {serviseri.map(s => <option key={s.idServiser} value={s.idServiser}>{s.imePrezime}</option>)}

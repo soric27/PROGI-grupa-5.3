@@ -19,6 +19,7 @@ public class ServiserService {
     @Transactional(readOnly = true)
     public List<ServiserDto> getSviServiseri() {
         return serviseri.findAll().stream()
+                .filter(s -> s.getOsoba() != null && "serviser".equalsIgnoreCase(s.getOsoba().getUloga()))
                 .map(ServiserMapper::toDto)
                 .toList();
     }
